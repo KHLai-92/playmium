@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 128 128">
+  <title>Inline Preview — floating play screen</title>
+  <rect x="4" y="4" width="120" height="120" rx="28" fill="#111c2b"/>
+  <rect x="17" y="39" width="78" height="61" rx="13" fill="#30495a"/>
+  <rect x="24" y="46" width="64" height="47" rx="7" fill="#111c2b"/>
+  <rect x="33" y="24" width="78" height="61" rx="13" fill="#5eead4"/>
+  <polygon points="63,39 63,70 88,54.5" fill="#111c2b"/>
+</svg>

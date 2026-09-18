@@ -1,0 +1,10 @@
+export const sharedPreviewPrepareEvent = "skip-ads-preview-shared-prepare";
+export const sharedPreviewCancelEvent = "skip-ads-preview-shared-cancel";
+export const sharedPreviewStartEvent = "skip-ads-preview-shared-start";
+export const sharedPreviewResultEvent = "skip-ads-preview-shared-result";
+export type SharedPreviewRequest = Readonly<{ videoId: string; requestId: string; actionId?: string; startedAtMs?: number;
+  timeoutMs: number; retentionCapacity?: number; retryLimit?: number;
+  rect?: { left: number; top: number; width: number; height: number };
+  timeoutMultipliers?: { starting: number; ready: number; request: number } }>;
+export type SharedPreviewResult = SharedPreviewRequest & Readonly<{ phase: "ready" | "error"; source: string;
+  error: string; retryable: boolean; stage: string; responseSource: "broker" }>;

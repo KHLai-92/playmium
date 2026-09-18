@@ -1,0 +1,19 @@
+{
+  "name": "playmium",
+  "version": "1.0.0",
+  "private": true,
+  "author": "Peter & Codex <joint@local>",
+  "type": "module",
+  "scripts": {
+    "build": "node scripts/build-preview-prototype.mjs",
+    "typecheck": "tsc --noEmit",
+    "test": "npm run build && node scripts/test-preview.mjs"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.0",
+    "@types/chrome": "0.2.2",
+    "@types/node": "^26.1.2",
+    "esbuild": "0.28.1",
+    "typescript": "7.0.2"
+  }
+}

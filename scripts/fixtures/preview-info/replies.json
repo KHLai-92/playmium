@@ -1,0 +1,420 @@
+{
+  "onResponseReceivedEndpoints": [
+    {
+      "appendContinuationItemsAction": {
+        "continuationItems": [
+          {
+            "commentThreadRenderer": {
+              "replies": {
+                "commentRepliesRenderer": {
+                  "viewReplies": {
+                    "buttonRenderer": {
+                      "text": {
+                        "runs": [
+                          {
+                            "text": "查看回覆"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "subThreads": [
+                    {
+                      "commentThreadRenderer": {
+                        "commentViewModel": {
+                          "commentViewModel": {
+                            "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FXenJESWx1NDd2ICgoAQ%3D%3D",
+                            "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAWzrDIlu47v"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "commentViewModel": {
+                "commentViewModel": {
+                  "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWa1FEUzdEdmh4ICgoAQ%3D%3D",
+                  "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVkQDS7Dvhx"
+                }
+              }
+            }
+          },
+          {
+            "commentThreadRenderer": {
+              "commentViewModel": {
+                "commentViewModel": {
+                  "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FYSDhfMWNWaTFfICgoAQ%3D%3D",
+                  "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAXH8_1cVi1_"
+                }
+              }
+            }
+          },
+          {
+            "commentThreadRenderer": {
+              "replies": {
+                "commentRepliesRenderer": {
+                  "viewReplies": {
+                    "buttonRenderer": {
+                      "text": {
+                        "runs": [
+                          {
+                            "text": "查看回覆"
+                          }
+                        ]
+                      }
+                    }
+                  },
+                  "subThreads": [
+                    {
+                      "commentThreadRenderer": {
+                        "replies": {
+                          "commentRepliesRenderer": {
+                            "viewReplies": {
+                              "buttonRenderer": {
+                                "text": {
+                                  "runs": [
+                                    {
+                                      "text": "查看回覆"
+                                    }
+                                  ]
+                                }
+                              }
+                            },
+                            "subThreads": [
+                              {
+                                "continuationItemRenderer": {
+                                  "button": {
+                                    "buttonRenderer": {
+                                      "text": {
+                                        "runs": [
+                                          {
+                                            "text": "顯示更多回覆"
+                                          }
+                                        ]
+                                      },
+                                      "command": {
+                                        "commandMetadata": {
+                                          "webCommandMetadata": {}
+                                        },
+                                        "continuationCommand": {
+                                          "token": "fixture-token-0"
+                                        }
+                                      }
+                                    }
+                                  }
+                                }
+                              }
+                            ]
+                          }
+                        },
+                        "commentViewModel": {
+                          "commentViewModel": {
+                            "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHpOSjhHOHhOICgoAQ%3D%3D",
+                            "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlzNJ8G8xN"
+                          }
+                        }
+                      }
+                    },
+                    {
+                      "commentThreadRenderer": {
+                        "commentViewModel": {
+                          "commentViewModel": {
+                            "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHpMNWxEU2hJICgoAQ%3D%3D",
+                            "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlzL5lDShI"
+                          }
+                        }
+                      }
+                    }
+                  ]
+                }
+              },
+              "commentViewModel": {
+                "commentViewModel": {
+                  "commentKey": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHZfcGZvTXlNICgoAQ%3D%3D",
+                  "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlv_pfoMyM"
+                }
+              }
+            }
+          }
+        ]
+      }
+    }
+  ],
+  "frameworkUpdates": {
+    "entityBatchUpdate": {
+      "mutations": [
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWa1FEUzdEdmh4ICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVkQDS7Dvhx",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "8",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FXenJESWx1NDd2ICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAWzrDIlu47v",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "2",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FYSDhfMWNWaTFfICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAXH8_1cVi1_",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "8",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHZfcGZvTXlNICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlv_pfoMyM",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "4",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHpOSjhHOHhOICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlzNJ8G8xN",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "5",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {
+            "commentEntityPayload": {
+              "key": "EjFVZ3dPU09BZ21NMGpYY2dlQXRkNEFhQUJBZy5BVmtENGZwLUNHc0FWbHpMNWxEU2hJICgoAQ%3D%3D",
+              "properties": {
+                "commentId": "UgwOSOAgmM0jXcgeAtd4AaABAg.AVkD4fp-CGsAVlzL5lDShI",
+                "content": {
+                  "content": "Fixture comment with 1:23 timestamp"
+                },
+                "publishedTime": "1 day ago"
+              },
+              "author": {
+                "displayName": "Fixture author",
+                "avatarThumbnailUrl": "https://yt3.ggpht.com/fixture/avatar.jpg",
+                "isVerified": false,
+                "isCreator": false,
+                "channelCommand": {
+                  "innertubeCommand": {
+                    "commandMetadata": {
+                      "webCommandMetadata": {
+                        "url": "/@fixture"
+                      }
+                    }
+                  }
+                }
+              },
+              "toolbar": {
+                "likeCountNotliked": "3",
+                "replyCount": ""
+              }
+            }
+          }
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        },
+        {
+          "payload": {}
+        }
+      ]
+    }
+  }
+}

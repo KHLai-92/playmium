@@ -1,0 +1,12 @@
+node_modules/
+dist-preview-prototype/
+release/
+test-results/
+playwright-report/
+
+.scratch/
+
+playmium-*.zip
+
+**/__pycache__/
+**/.render-cache/
