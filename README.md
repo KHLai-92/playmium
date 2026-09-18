@@ -9,14 +9,14 @@ Native YouTube previews keep their native behavior, while playlist items and sup
 <details open>
 <summary><strong>Demo</strong></summary>
 
-https://github.com/user-attachments/assets/6439e273-265a-4926-aa58-772671c4d953
+https://github.com/user-attachments/assets/dec9a8c9-3b84-48fc-9fce-03edb6aff6af
 
 </details>
 
 <details>
 <summary><strong>中文版</strong></summary>
 
-https://github.com/user-attachments/assets/c60b621e-a5d5-45ec-a705-08c681bb6f48
+https://github.com/user-attachments/assets/8ba97334-c135-4ef9-9cab-3e3a6a91ed4e
 
 </details>
 
