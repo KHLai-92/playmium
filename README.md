@@ -45,7 +45,7 @@ Requires Node.js 24 or later and npm.
 ```powershell
 npm ci
 npm run typecheck
-npm run experiment:build
+npm run build
 node scripts/test-preview.mjs --node-only
 ```
 
