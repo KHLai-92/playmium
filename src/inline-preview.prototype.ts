@@ -1072,7 +1072,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     return `${position} · select a video`;
   }
   function playlistPreviewLabel(state: "idle" | "preparing" | "ready" | "error" | "playing") {
-    return { idle: retainPlaylistPreviews ? "Hover to prepare" : "Click to play", preparing: "Preparing preview…", ready: "Preview ready",
+    return { idle: retainPlaylistPreviews ? "Hover to prepare" : "Click to play", preparing: "Preparing preview…", ready: "Ready",
       error: "Preview unavailable", playing: "Playing" }[state];
   }
   function handlePlaylistSelectPhase(detail: PlaylistSelectPhase) {
@@ -2509,7 +2509,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let thumbnailSequence = 0;
   const thumbnailHover = createPlaylistHoverIntent({ schedule: (action, ms) => setTimeout(action, ms), cancel: timer => clearTimeout(timer as number) });
   function thumbnailState(target: HTMLElement, videoId: string, phase: string) {
-    const owner = resolvePreviewThumbnail(target, location.href)?.target as HTMLElement | undefined;
+    const entry = resolvePreviewThumbnail(target, location.href);
+    const owner = entry?.target as HTMLElement | undefined;
     if (!owner) return;
     let badge = owner.querySelector<HTMLElement>(":scope > .skip-ads-thumbnail-preview-state");
     if (previewPlaybackSupport(owner, videoId, location.pathname).native) { badge?.remove(); return; }
@@ -2519,7 +2520,19 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       if (getComputedStyle(owner).position === "static") owner.style.position = "relative";
       owner.append(badge);
     }
+    if (entry?.surface === "notification") {
+      badge.style.left = "4px";
+      badge.style.bottom = "4px";
+      badge.style.padding = "2px 4px";
+      badge.style.fontSize = "10px";
+      badge.style.maxWidth = "calc(100% - 8px)";
+      badge.style.overflow = "hidden";
+      badge.style.textOverflow = "ellipsis";
+      badge.style.whiteSpace = "nowrap";
+    }
     badge.dataset.previewState = phase;
+    badge.style.color = phase === "preparing" ? "#f1c75b" :
+      phase === "ready" ? "#5eead4" : "#dcece9";
     badge.textContent = ({ idle: "Hover to prepare", preparing: "Preparing preview…", ready: "Ready", error: "Try again", playing: "Playing" } as Record<string, string>)[phase] ?? phase;
   }
   function leaveThumbnail() {
