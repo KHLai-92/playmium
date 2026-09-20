@@ -2715,12 +2715,14 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   }, true);
   window.addEventListener("keydown", event => {
     if (!supportedPage() || event.composedPath().some(target => target instanceof Element && target.closest(shortsSelector))) return;
-    if (session && event.code === "Escape" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey) {
+    if (event.code === "Escape" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
+        (overlaysOpen() || session)) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) {
-        if (typeof playlistExpanded !== "undefined" && playlistExpanded) previewSession.dispatch({ type: "control", action: "toggle-playlist", value: false });
-        else if (document.fullscreenElement === session.host || session.fullscreenRequested) previewSession.dispatch({ type: "control", action: "exit-fullscreen" });
-        else previewSession.dispatch({ type: "close", reason: "escape" });
+        if (overlaysOpen()) closeControlPages();
+        else if (session && (document.fullscreenElement === session.host || session.fullscreenRequested))
+          previewSession.dispatch({ type: "control", action: "exit-fullscreen" });
+        else if (session) previewSession.dispatch({ type: "close", reason: "escape" });
       }
       return;
     }
@@ -2821,6 +2823,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     session.fullscreenEntered = fullscreen;
     if (!session.fullscreenPending || !fullscreen) session.fullscreenRequested = fullscreen;
+    const keyboard = (navigator as Navigator & {
+      keyboard?: { lock?: (keys?: string[]) => Promise<void>; unlock?: () => void }
+    }).keyboard;
+    if (fullscreen) void keyboard?.lock?.(["Escape"]).catch(() => {});
+    else keyboard?.unlock?.();
     // Native Esc is often consumed by Chrome. Retain the pinned preview and
     // return to floating mode when fullscreenchange reports the actual exit.
     if (!fullscreen) previewSession.dispatch({ type: "lifecycle", event: "arm-playback-recovery" });
