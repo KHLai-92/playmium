@@ -314,6 +314,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   settingsButton.setAttribute("aria-expanded", "false"); settingsButton.setAttribute("aria-controls", "controls");
   const closeButton = iconButton("release", "Close preview", icon("M6 6l12 12 M18 6 6 18"));
   const chapterButton = iconButton("chapters", "Chapters", node("span", { id: "chapter-title" }, "Chapters"), icon("M9 5l7 7-7 7"));
+  chapterButton.hidden = true;
   const infoButton = iconButton("video-info", "Description and comments", icon("M4 4h16v12H9l-5 4V4z M8 8h8 M8 12h5"));
   infoButton.setAttribute("aria-controls", "info-panel"); infoButton.setAttribute("aria-expanded", "false");
   chapterButton.setAttribute("aria-expanded", "false"); chapterButton.setAttribute("aria-controls", "chapter-panel");
@@ -1427,6 +1428,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     if (active && metadataRequestSource !== active.video.currentSrc) requestChapters();
     const chapters = metadata?.chapters ?? [];
+    chapterButton.hidden = chapters.length === 0;
+    if (chapterButton.hidden) {
+      chapterPanel.hidden = true;
+      chapterButton.setAttribute("aria-expanded", "false");
+    }
     const current = chapters.findLast(c => c.start <= (active?.video.currentTime ?? 0));
     element("chapter-title").textContent = current?.title ?? "Chapters";
     chapterButton.setAttribute("aria-label", current ? `Chapters: ${current.title}` : "Chapters");
