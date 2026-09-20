@@ -295,6 +295,14 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const iconButton = (id: string, label: string, ...children: Node[]) => node("button",
     { id, class: "player-button", "data-active": "", "aria-label": label, "data-tooltip": label }, ...children);
   const playButton = iconButton("play", "Pause (K)", icon("M8 5l11 7-11 7z", "icon-play", true), icon("M7 5h3v14H7z M14 5h3v14h-3z", "icon-pause", true));
+  const playlistPreviousButton = iconButton("playlist-previous", "Previous playlist video (Shift+P)",
+    icon("M6 5h2v14H6z M19 5v14L9 12z", "", true));
+  const playlistNextButton = iconButton("playlist-next", "Next playlist video (Shift+N)",
+    icon("M16 5h2v14h-2z M5 5v14l10-7z", "", true));
+  playlistPreviousButton.hidden = true;
+  playlistPreviousButton.setAttribute("aria-keyshortcuts", "Shift+P");
+  playlistNextButton.hidden = true;
+  playlistNextButton.setAttribute("aria-keyshortcuts", "Shift+N");
   const captionsButton = iconButton("captions", "Subtitles (C)", icon("M3 5h18v14H3z M10 9H7v6h3 M17 9h-3v6h3"));
   captionsButton.setAttribute("aria-pressed", "false"); captionsButton.setAttribute("aria-keyshortcuts", "C");
   const fullscreenButton = iconButton("fullscreen", "Fullscreen (F)", icon("M8 3H3v5 M16 3h5v5 M3 16v5h5 M21 16v5h-5"));
@@ -382,7 +390,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       node("div", { id: "control-tabs", role: "tablist", "aria-label": "Control panel sections" }, youtubeControlsTab, playmiumTab),
       node("div", { id: "progress-display", hidden: "" },
         node("input", { id: "progress", "data-active": "", type: "range", min: "0", max: "1", step: "0.1", value: "0", "aria-label": "Video progress" }),
-        node("div", { id: "transport" }, playButton,
+        node("div", { id: "transport" }, playlistPreviousButton, playButton, playlistNextButton,
           node("div", { class: "sound-control" }, speaker,
             node("input", { id: "volume", "data-active": "", type: "range", min: "0", max: "1", step: "0.05", value: "0.5", "aria-label": "Volume" })),
           node("output", { id: "time", for: "progress", "aria-live": "off" }, "0:00 / --:--"),
@@ -468,8 +476,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #progress-display{position:absolute;inset:auto 0 0;padding:34px 14px 8px;border-radius:0;background:linear-gradient(transparent,#000d);z-index:3;pointer-events:auto}
     #progress{display:block;height:4px;width:100%;margin:0 0 8px;accent-color:#5eead4;cursor:pointer} #transport{display:flex;align-items:center;gap:5px}.transport-spacer{flex:1} #time{font-size:12px;white-space:nowrap;margin:0 6px;color:#f6f7f9}
     .player-button,#speaker{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:7px;border:0;border-radius:50%;background:transparent;color:white;flex-shrink:0;cursor:pointer}
-    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before,#playlist-autoplay[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}#playlist-autoplay[aria-pressed=true]{color:#a9fff0}
-    .player-button::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 10px);right:0;white-space:nowrap;background:#20242df5;border:1px solid #ffffff18;border-radius:6px;padding:5px 8px;font:12px/1.4 system-ui;opacity:0;visibility:hidden;pointer-events:none}.player-button:hover::after,.player-button:focus-visible::after{opacity:1;visibility:visible} #play::after{left:0;right:auto}
+    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}#playlist-previous:disabled,#playlist-next:disabled{opacity:.35;cursor:default}#playlist-previous:disabled:hover,#playlist-next:disabled:hover{background:transparent}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before,#playlist-autoplay[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}#playlist-autoplay[aria-pressed=true]{color:#a9fff0}
+    .player-button::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 10px);right:0;white-space:nowrap;background:#20242df5;border:1px solid #ffffff18;border-radius:6px;padding:5px 8px;font:12px/1.4 system-ui;opacity:0;visibility:hidden;pointer-events:none}.player-button:hover::after,.player-button:focus-visible::after{opacity:1;visibility:visible} #playlist-previous::after,#play::after,#playlist-next::after{left:0;right:auto}#fullscreen::after{right:0;left:auto}
     .sound-control{padding:0;background:transparent;gap:0}.sound-control #volume{width:0;opacity:0;margin:0;transition:width .16s,opacity .16s;accent-color:white}.sound-control:hover #volume,.sound-control:focus-within #volume{width:85px;opacity:1;margin:0 8px 0 2px} #speaker svg{width:24px;height:24px}.sound-tooltip{font-size:12px;font-weight:500}
     #top-controls{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:6px 8px;background:linear-gradient(#0008,transparent);z-index:4;pointer-events:none} #drag-handle{flex:1;color:#ffffffb0;font:22px/32px system-ui;text-align:center;cursor:grab;touch-action:none;user-select:none;pointer-events:auto} #drag-handle:active{cursor:grabbing} #release{background:#151922b3;width:32px;height:32px} #release::after{top:calc(100% + 8px);bottom:auto}
     #top-controls{justify-content:flex-end}
@@ -843,6 +851,14 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistChrome.hidden = !eligible;
     playlistButton.hidden = !eligible;
     playlistAutoplayButton.hidden = !eligible;
+    playlistPreviousButton.hidden = !eligible;
+    playlistNextButton.hidden = !eligible;
+    playlistPreviousButton.disabled = !available || !playlist || playlist.currentIndex <= 0;
+    playlistNextButton.disabled = !available || !playlist || playlist.currentIndex >= playlist.items.length - 1;
+    playlistPreviousButton.style.opacity = playlistPreviousButton.disabled ? "0.35" : "1";
+    playlistNextButton.style.opacity = playlistNextButton.disabled ? "0.35" : "1";
+    playlistPreviousButton.dataset.tooltip = "Previous playlist video (Shift+P)";
+    playlistNextButton.dataset.tooltip = "Next playlist video (Shift+N)";
     playlistAutoplayButton.setAttribute("aria-pressed", String(playlistAutoplay));
     const autoplayLabel = previewUiCopy(uiLanguage).autoplayNext(playlistAutoplay);
     playlistAutoplayButton.setAttribute("aria-label", autoplayLabel);
@@ -1242,6 +1258,16 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   playlistButton.onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist" });
   playlistHandle.onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist", value: true });
   playlistElement("playlist-close").onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist", value: false });
+  playlistPreviousButton.onclick = () => {
+    if (!playlist || playlist.currentIndex <= 0) return;
+    previewSession.dispatch({ type: "playlist", action: "select",
+      videoId: playlist.items[playlist.currentIndex - 1].videoId });
+  };
+  playlistNextButton.onclick = () => {
+    if (!playlist || playlist.currentIndex >= playlist.items.length - 1) return;
+    previewSession.dispatch({ type: "playlist", action: "select",
+      videoId: playlist.items[playlist.currentIndex + 1].videoId });
+  };
   const style = document.createElement("style");
   style.textContent = `
     /* YouTube disables pointer events on a finished preview. Keep the pinned
@@ -2712,6 +2738,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const selectTrigger = target instanceof HTMLElement && target.matches(".select-trigger");
     if (!selectTrigger && target instanceof HTMLElement && target !== element("progress") && (target.isContentEditable || target.matches("input,textarea,select,[role=textbox],[role=combobox]"))) return;
     if (!session || event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.shiftKey && (event.code === "KeyP" || event.code === "KeyN") && session.playlistContext) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!event.repeat) (event.code === "KeyP" ? playlistPreviousButton : playlistNextButton).click();
+      return;
+    }
     if (event.shiftKey && (event.code === "Period" || event.code === "Comma")) {
       event.preventDefault(); event.stopImmediatePropagation();
       previewSession.dispatch({ type: "control", action: "set-speed", value: session.video.playbackRate + (event.code === "Period" ? 0.25 : -0.25) }); return;
