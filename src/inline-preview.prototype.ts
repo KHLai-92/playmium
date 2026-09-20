@@ -1247,7 +1247,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     /* YouTube disables pointer events on a finished preview. Keep the pinned
        host interactive so controls do not click through to another thumbnail. */
     .${hostClass}{pointer-events:auto!important;}
-    #skip-ads-preview-loading-host{pointer-events:none!important;}
+    #skip-ads-preview-loading-host:not([data-skip-preview-owned-ready]){pointer-events:none!important;}
     .${hostClass} yt-progress-bar{display:none!important;}
     .${hostClass} .ytInlinePlayerControlsHost{display:none!important;}
     .${hostClass} #player-container-wrapper{opacity:1!important;}
