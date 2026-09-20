@@ -210,6 +210,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let playlistError = "";
   let playlistExpanded = false;
   let playlistRevealed = false;
+  let sidePanelTab: "chapters" | "playlist" | null = null;
   let playlistSelectionSequence = 0;
   let playlistActionSequence = 0;
   let playlistRequestSequence = 0;
@@ -318,12 +319,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const infoButton = iconButton("video-info", "Description and comments", icon("M4 4h16v12H9l-5 4V4z M8 8h8 M8 12h5"));
   infoButton.setAttribute("aria-controls", "info-panel"); infoButton.setAttribute("aria-expanded", "false");
   chapterButton.setAttribute("aria-expanded", "false"); chapterButton.setAttribute("aria-controls", "chapter-panel");
-  const playlistButton = iconButton("playlist-toggle", "Playlist", icon("M4 6h11 M4 12h11 M4 18h8 M18 15v6 M15 18h6"), node("span", { id: "playlist-position" }, ""));
+  const playlistButton = iconButton("playlist-toggle", "Playlist", icon("M5 6h11 M5 11h11 M5 16h8 M17 14l4 3-4 3z"), node("span", { id: "playlist-position" }, ""));
   playlistButton.hidden = true;
   playlistButton.setAttribute("aria-expanded", "false");
   playlistButton.setAttribute("aria-controls", "skip-ads-preview-playlist-drawer");
-  const playlistAutoplayButton = iconButton("playlist-autoplay", "Autoplay next playlist video: Off",
-    icon("M4 6h10 M4 12h7 M4 18h7 M15 13l6 4-6 4z"));
+  const playlistAutoplayButton = node("button", {
+    id: "playlist-autoplay", type: "button", class: "playlist-autoplay-toggle",
+    "aria-label": "Autoplay next playlist video: Off"
+  },
+    node("span", { class: "playlist-autoplay-label" }, "Autoplay next"),
+    node("span", { class: "playlist-autoplay-switch", "aria-hidden": "true" },
+      node("span", { class: "playlist-autoplay-knob" })));
   playlistAutoplayButton.hidden = true;
   playlistAutoplayButton.setAttribute("aria-pressed", "false");
   const speakerIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
@@ -396,7 +402,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
             node("input", { id: "volume", "data-active": "", type: "range", min: "0", max: "1", step: "0.05", value: "0.5", "aria-label": "Volume" })),
           node("output", { id: "time", for: "progress", "aria-live": "off" }, "0:00 / --:--"),
           chapterButton,
-          node("div", { class: "transport-spacer" }), captionsButton, infoButton, settingsButton, playlistAutoplayButton, playlistButton, fullscreenButton)),
+          node("div", { class: "transport-spacer" }), captionsButton, infoButton, settingsButton, playlistButton, fullscreenButton)),
       node("div", { id: "youtube-panel", role: "tabpanel", "aria-labelledby": "youtube-tab" },
         row(node("label", {}, node("span", { id: "subtitles-label" }, "Subtitles"), node("select", { id: "caption-language", "aria-label": "Subtitle language", disabled: "" }))),
         row(node("label", {}, node("span", { id: "auto-translate-label" }, "Auto-translate"), node("select", { id: "caption-translation", "aria-label": "Subtitle translation", disabled: "" }))),
@@ -477,7 +483,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #progress-display{position:absolute;inset:auto 0 0;padding:34px 14px 8px;border-radius:0;background:linear-gradient(transparent,#000d);z-index:3;pointer-events:auto}
     #progress{display:block;height:4px;width:100%;margin:0 0 8px;accent-color:#5eead4;cursor:pointer} #transport{display:flex;align-items:center;gap:5px}.transport-spacer{flex:1} #time{font-size:12px;white-space:nowrap;margin:0 6px;color:#f6f7f9}
     .player-button,#speaker{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:7px;border:0;border-radius:50%;background:transparent;color:white;flex-shrink:0;cursor:pointer}
-    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}#playlist-previous:disabled,#playlist-next:disabled{opacity:.35;cursor:default}#playlist-previous:disabled:hover,#playlist-next:disabled:hover{background:transparent}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before,#playlist-autoplay[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}#playlist-autoplay[aria-pressed=true]{color:#a9fff0}
+    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}#playlist-previous:disabled,#playlist-next:disabled{opacity:.35;cursor:default}#playlist-previous:disabled:hover,#playlist-next:disabled:hover{background:transparent}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}
     .player-button::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 10px);right:0;white-space:nowrap;background:#20242df5;border:1px solid #ffffff18;border-radius:6px;padding:5px 8px;font:12px/1.4 system-ui;opacity:0;visibility:hidden;pointer-events:none}.player-button:hover::after,.player-button:focus-visible::after{opacity:1;visibility:visible} #playlist-previous::after,#play::after,#playlist-next::after{left:0;right:auto}#fullscreen::after{right:0;left:auto}
     .sound-control{padding:0;background:transparent;gap:0}.sound-control #volume{width:0;opacity:0;margin:0;transition:width .16s,opacity .16s;accent-color:white}.sound-control:hover #volume,.sound-control:focus-within #volume{width:85px;opacity:1;margin:0 8px 0 2px} #speaker svg{width:24px;height:24px}.sound-tooltip{font-size:12px;font-weight:500}
     #top-controls{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:6px 8px;background:linear-gradient(#0008,transparent);z-index:4;pointer-events:none} #drag-handle{flex:1;color:#ffffffb0;font:22px/32px system-ui;text-align:center;cursor:grab;touch-action:none;user-select:none;pointer-events:auto} #drag-handle:active{cursor:grabbing} #release{background:#151922b3;width:32px;height:32px} #release::after{top:calc(100% + 8px);bottom:auto}
@@ -503,30 +509,73 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     :host{color-scheme:dark;font:13px/1.4 system-ui;color:#f2f5f8;pointer-events:none}*{box-sizing:border-box}[hidden]{display:none!important}button{font:inherit;color:inherit}
     #playlist-surface{position:fixed;inset:0;pointer-events:none;--mint:#5eead4;--panel:#12161df7;--line:#ffffff20;--muted:#a9b3c1}
     #playlist-edge-zone{position:fixed;left:var(--handle-left);top:var(--handle-top);width:var(--handle-width);height:var(--handle-height);display:grid;place-items:stretch;opacity:0;visibility:hidden;transform:translateX(12px);transition:opacity .15s ease,transform .2s cubic-bezier(.2,.8,.2,1),visibility .15s;pointer-events:none}
-    #playlist-surface[data-revealed=true]:not([data-expanded=true]) #playlist-edge-zone{opacity:1;visibility:visible;transform:none;pointer-events:auto}
-    #playlist-handle{position:relative;width:100%;height:100%;padding:0;overflow:hidden;border:1px solid #ffffff3b;border-right:0;border-radius:18px 0 0 18px;background:linear-gradient(175deg,#28366c 0%,#75669d 49%,#f1763f 100%);box-shadow:-10px 18px 42px #0008;cursor:pointer}
-    #playlist-handle::before{content:"";position:absolute;width:245px;aspect-ratio:1;right:-82px;top:18%;border:1px solid #ffffff42;border-radius:50%;box-shadow:0 0 0 17px #ffffff0b,0 0 0 38px #00000015}
-    #playlist-handle::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#ffffff12,transparent 55%);pointer-events:none}
-    #playlist-handle-copy{position:relative;z-index:1;height:100%;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:10px;text-shadow:0 2px 8px #0008}
-    #playlist-handle-copy strong{font-size:10px;letter-spacing:.17em;writing-mode:vertical-rl}#playlist-handle-copy small{font-size:8px;line-height:1.45;letter-spacing:.05em;color:#ffffffc7;font-variant-numeric:tabular-nums;text-align:center}
+    #playlist-surface:is([data-revealed=true],[data-expanded=true]) #playlist-edge-zone{opacity:1;visibility:visible;transform:none;pointer-events:auto}
     #skip-ads-preview-playlist-drawer{position:fixed;left:var(--drawer-left);top:var(--drawer-top);width:var(--drawer-width);height:var(--drawer-height);display:flex;flex-direction:column;overflow:hidden;border:1px solid var(--line);border-radius:18px;background:#11161ee8;box-shadow:0 26px 85px #000c;backdrop-filter:blur(24px);opacity:0;visibility:hidden;transform:translateX(22px);transition:opacity .17s ease,transform .22s cubic-bezier(.2,.8,.2,1),visibility .17s;pointer-events:none}
-    #playlist-surface[data-expanded=true] #skip-ads-preview-playlist-drawer{opacity:1;visibility:visible;transform:none;pointer-events:auto}
+    #playlist-surface:is([data-expanded=true],[data-revealed=true])[data-active-tab=playlist] #skip-ads-preview-playlist-drawer{opacity:1;visibility:visible;transform:none;pointer-events:auto}
     #playlist-resize-proxy{position:fixed;left:calc(var(--player-right) - 7px);top:var(--player-top);width:7px;height:var(--player-height);z-index:4;display:none;cursor:ew-resize;touch-action:none;pointer-events:auto}
     #playlist-surface[data-edge-covered=true]:is([data-expanded=true],[data-revealed=true]) #playlist-resize-proxy{display:block}
-    #playlist-header{display:grid;grid-template-columns:64px minmax(0,1fr) 32px;gap:11px;align-items:center;padding:12px;border-bottom:1px solid var(--line);min-height:88px}
+    #playlist-header{display:grid;grid-template-columns:64px minmax(0,1fr) auto 32px;gap:11px;align-items:center;padding:12px;border-bottom:1px solid var(--line);min-height:88px}
     #playlist-cover{position:relative;width:64px;aspect-ratio:1;overflow:hidden;border:1px solid #ffffff31;border-radius:12px;background:linear-gradient(155deg,#28366c,#75669d 52%,#f1763f);box-shadow:0 8px 22px #0007}
     #playlist-cover::before{content:"";position:absolute;width:80%;aspect-ratio:1;left:30%;top:16%;border:1px solid #ffffff52;border-radius:50%}#playlist-copy{min-width:0}#playlist-title{display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:14px}#playlist-meta{display:block;margin-top:4px;color:var(--muted);font-size:11px;font-variant-numeric:tabular-nums}
+    .playlist-autoplay-toggle{display:flex;align-items:center;gap:8px;padding:5px 7px;border:0;background:transparent;color:#b8c2cf;white-space:nowrap;cursor:pointer}
+    .playlist-autoplay-label{font-size:10px;font-weight:600}
+    .playlist-autoplay-switch{position:relative;width:30px;height:16px;border-radius:10px;background:#ffffff2b;transition:background .15s}
+    .playlist-autoplay-knob{position:absolute;left:2px;top:2px;width:12px;height:12px;border-radius:50%;background:#d7dde5;transition:transform .15s,background .15s}
+    .playlist-autoplay-toggle[aria-pressed=true] .playlist-autoplay-switch{background:#5eead466}
+    .playlist-autoplay-toggle[aria-pressed=true] .playlist-autoplay-knob{transform:translateX(14px);background:#5eead4}
+    .playlist-autoplay-toggle:hover{color:#eef7f5}
     #playlist-close{width:32px;height:32px;border:0;border-radius:9px;background:transparent;font-size:21px;cursor:pointer}#playlist-close:hover,#playlist-close:focus-visible{background:#ffffff16}button:focus-visible{outline:2px solid var(--mint);outline-offset:2px}
     #playlist-items{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;padding:7px;scrollbar-width:thin;scrollbar-color:#607080 transparent}
     .playlist-loading,.playlist-error{display:grid;place-items:center;min-height:150px;padding:24px;color:var(--muted);text-align:center}.playlist-loading::before{content:"";width:24px;height:24px;margin-bottom:12px;border:2px solid #ffffff28;border-top-color:var(--mint);border-radius:50%;animation:playlist-spin .8s linear infinite}.playlist-error button{margin-top:12px;padding:7px 12px;border:1px solid #ffffff2e;border-radius:8px;background:#ffffff0d;color:#eef3f9;cursor:pointer}.playlist-error button:hover,.playlist-error button:focus-visible{background:#ffffff1b}@keyframes playlist-spin{to{transform:rotate(1turn)}}
     .playlist-item{width:100%;min-height:68px;display:grid;grid-template-columns:22px 82px minmax(0,1fr);gap:9px;align-items:center;padding:7px;border:0;border-radius:10px;background:transparent;text-align:left;cursor:pointer}.playlist-item:hover,.playlist-item:focus-visible{background:#ffffff0d}.playlist-item[aria-current=true]{background:#5eead414;box-shadow:inset 3px 0 var(--mint)}
     .playlist-number{color:#929ead;font-size:10px;text-align:center;font-variant-numeric:tabular-nums}.playlist-item[aria-current=true] .playlist-number{color:var(--mint)}.playlist-thumb{position:relative;width:82px;aspect-ratio:16/9;overflow:hidden;border-radius:6px;background:#273141}.playlist-thumb img{width:100%;height:100%;display:block;object-fit:cover}.playlist-duration{position:absolute;right:3px;bottom:3px;padding:1px 4px;border-radius:3px;background:#000d;font-size:9px}.playlist-item-copy{min-width:0}.playlist-item-title{display:-webkit-box;overflow:hidden;-webkit-box-orient:vertical;-webkit-line-clamp:2;font-size:12px;font-weight:600;line-height:1.35}.playlist-channel,.playlist-preview-state{display:block;margin-top:4px;overflow:hidden;color:var(--muted);font-size:10px;text-overflow:ellipsis;white-space:nowrap}.playlist-preview-state{color:#9aa8b8}.playlist-item[data-preview-state=preparing] .playlist-preview-state{color:#f2c879}.playlist-item[data-preview-state=ready] .playlist-preview-state,.playlist-item[data-preview-state=playing] .playlist-preview-state{color:var(--mint)}.playlist-item[data-preview-state=error] .playlist-preview-state{color:#ff9b9b}
+    #chapter-panel{pointer-events:auto;position:fixed;left:var(--drawer-left);top:var(--drawer-top);width:var(--drawer-width);height:var(--drawer-height);display:flex;flex-direction:column;overflow:hidden;padding:0;border:1px solid var(--line);border-radius:18px;background:#11161ee8;box-shadow:0 26px 85px #000c;backdrop-filter:blur(24px);color:#f2f5f8}
+    #chapter-panel header{display:flex;align-items:center;justify-content:space-between;min-height:64px;padding:12px 16px;border-bottom:1px solid var(--line)}
+    #chapter-panel header strong{font-size:14px}
+    #close-chapters{width:32px;height:32px;border:0;border-radius:9px;background:transparent;font-size:21px;cursor:pointer}
+    #close-chapters:hover,#close-chapters:focus-visible{background:#ffffff16}
+    #chapter-list{min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;padding:8px;scrollbar-width:thin;scrollbar-color:#607080 transparent}
+    .chapter-item{width:100%;display:grid;grid-template-columns:80px minmax(0,1fr);gap:10px;align-items:center;padding:8px;border:0;border-radius:9px;background:transparent;color:inherit;text-align:left;cursor:pointer}
+    .chapter-item:not(:has(img)){grid-template-columns:1fr}.chapter-item:hover{background:#ffffff0d}.chapter-item[aria-current=true]{background:#5eead414;box-shadow:inset 3px 0 var(--mint)}
+    .chapter-item img{width:80px;aspect-ratio:16/9;object-fit:cover;border-radius:6px}.chapter-copy{display:grid;gap:3px;min-width:0}.chapter-copy small{color:#96c9fa}
+
+    #playlist-edge-zone{left:calc(var(--drawer-left) - 72px);top:var(--drawer-top);width:64px;height:var(--drawer-height);display:block}
+    #side-panel-tabs{display:flex;flex-direction:column;gap:6px;height:100%}
+    #playlist-surface[data-revealed=true][data-active-tab=""] #playlist-edge-zone{
+      left:calc(var(--drawer-left) + var(--drawer-width) - 64px)
+    }
+    #side-panel-tabs button{position:relative;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;width:64px;min-height:0;flex:1;padding:10px 6px;border:1px solid #ffffff1f;border-radius:10px;background:#11161ee8;color:#9da8b6;cursor:pointer;backdrop-filter:blur(20px)}
+    #side-panel-tabs button:hover{color:#e5f7f3;background:#ffffff0d}#side-panel-tabs button[aria-selected=true]{color:#a9fff0;border-color:#5eead45c;background:#5eead412}#side-panel-tabs button[aria-selected=true]::before{content:"";position:absolute;left:-1px;top:16%;bottom:16%;width:3px;border-radius:3px;background:#5eead4;box-shadow:0 0 10px #5eead466}
+    #side-panel-tabs svg{width:22px;height:22px;flex-shrink:0}
+    #side-panel-tabs span{font-size:10px;font-weight:600;letter-spacing:.02em;white-space:nowrap}
     @media(prefers-reduced-motion:reduce){#playlist-edge-zone,#skip-ads-preview-playlist-drawer{transition:none}}
   `;
-  const playlistHandle = node("button", { id: "playlist-handle", type: "button", "aria-label": "Open playlist", "aria-expanded": "false" },
-    node("span", { id: "playlist-handle-copy" }, node("strong", {}, "PLAYLIST"), node("small", { id: "playlist-handle-position" }, "")));
+
+  const chapterSideTab = node("button", {
+    id: "side-tab-chapters", type: "button", role: "tab",
+    "aria-label": "Chapters", "aria-selected": "false"
+  }, icon("M4 4h16v16H4z M9 4v16 M12 8h5 M12 12h5 M12 16h3"), node("span", {}, "Chapters"));
+
+  const playlistSideTab = node("button", {
+    id: "side-tab-playlist", type: "button", role: "tab",
+    "aria-label": "Playlist", "aria-selected": "false"
+  }, icon("M5 6h11 M5 11h11 M5 16h8 M17 14l4 3-4 3z"), node("span", {}, "Playlist"));
+
+  const sidePanelTabs = node("div", {
+    id: "side-panel-tabs", role: "tablist", "aria-label": "Preview navigation"
+  }, chapterSideTab, playlistSideTab);
+
   const playlistCover = node("span", { id: "playlist-cover", "aria-hidden": "true" });
   const playlistList = node("div", { id: "playlist-items", role: "list", "aria-label": "Videos in this playlist" });
+
+  function updateSidePanelScrollbars() {
+    const chapterList = chapterPanel.querySelector<HTMLElement>("#chapter-list");
+
+    for (const list of [chapterList, playlistList]) {
+      if (!list) continue;
+      list.style.overflowY = list.scrollHeight > list.clientHeight + 1 ? "auto" : "hidden";
+    }
+  }
   const playlistHoverIntent = createPlaylistHoverIntent({
     schedule: (callback, milliseconds) => setTimeout(callback, milliseconds),
     cancel: timer => clearTimeout(timer as ReturnType<typeof setTimeout>),
@@ -534,11 +583,13 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const playlistDrawer = node("section", { id: "skip-ads-preview-playlist-drawer", "aria-label": "Playlist" },
     node("header", { id: "playlist-header" }, playlistCover,
       node("span", { id: "playlist-copy" }, node("strong", { id: "playlist-title" }, "Playlist"), node("small", { id: "playlist-meta" }, "")),
+      playlistAutoplayButton,
       node("button", { id: "playlist-close", type: "button", "aria-label": "Close playlist" }, "×")),
     playlistList);
   const playlistResizeProxy = node("div", { id: "playlist-resize-proxy", "aria-hidden": "true" });
   const playlistSurface = node("div", { id: "playlist-surface", "data-expanded": "false", "data-revealed": "false", "data-edge-covered": "false" },
-    node("div", { id: "playlist-edge-zone" }, playlistHandle), playlistDrawer, playlistResizeProxy);
+    node("div", { id: "playlist-edge-zone" }, sidePanelTabs),
+    chapterPanel, playlistDrawer, playlistResizeProxy);
   playlistShadow.append(playlistStyle, playlistSurface);
   const diagnostics = shadow.querySelector("details")!;
   const audioButtons = shadow.getElementById("heard")!.parentElement!;
@@ -849,8 +900,9 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistHoverIntent.cancel();
     const eligible = Boolean(session?.playlistContext);
     const available = Boolean(eligible && playlist && playlist.items.length > 1);
-    playlistChrome.hidden = !eligible;
+    playlistChrome.hidden = chapterButton.hidden && !eligible;
     playlistButton.hidden = !eligible;
+    playlistSideTab.hidden = !eligible;
     playlistAutoplayButton.hidden = !eligible;
     playlistPreviousButton.hidden = !eligible;
     playlistNextButton.hidden = !eligible;
@@ -872,13 +924,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       return;
     }
     playlistButton.setAttribute("aria-expanded", String(playlistExpanded));
-    playlistHandle.setAttribute("aria-expanded", String(playlistExpanded));
     playlistSurface.dataset.expanded = String(playlistExpanded);
     playlistSurface.dataset.revealed = String(playlistRevealed);
     if (!available || !playlist) {
       playlistList.setAttribute("aria-busy", String(!playlistError));
       element("playlist-position").textContent = "";
-      playlistElement("playlist-handle-position").textContent = playlistError ? "Retry" : "Loading";
       playlistElement("playlist-title").textContent = "Playlist";
       playlistElement("playlist-meta").textContent = playlistError || "Loading playlist…";
       playlistButton.setAttribute("aria-label", playlistError ? "Playlist unavailable, retry" : "Playlist, loading");
@@ -894,7 +944,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistList.setAttribute("aria-busy", "false");
     const position = `${playlist.currentIndex + 1} / ${playlist.items.length}`;
     element("playlist-position").textContent = position;
-    playlistElement("playlist-handle-position").textContent = position;
     playlistElement("playlist-title").textContent = playlist.title;
     playlistElement("playlist-meta").textContent = playlistInteractionHint(position);
     playlistButton.setAttribute("aria-label", `Playlist, ${position}`);
@@ -929,7 +978,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         emitPreviewDebugLog("preview.hover", { surface: "playlist", videoId: item.videoId });
         if (!retainPlaylistPreviews) return;
         playlistHoverIntent.enter(item.videoId, () => {
-          if (playlistExpanded && row.isConnected && row.matches(":hover")) prefetch("hover");
+          if ((playlistExpanded || (playlistRevealed && sidePanelTab === "playlist")) && row.isConnected && row.matches(":hover")) prefetch("hover");
         });
       };
       row.onpointerleave = () => {
@@ -941,6 +990,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       return row;
     });
     playlistList.replaceChildren(...rows);
+    requestAnimationFrame(updateSidePanelScrollbars);
     queueMicrotask(() => playlistList.querySelector<HTMLElement>("[aria-current=true]")?.scrollIntoView({ block: "nearest" }));
   }
   function cancelPlaylistPrime(reason: string, videoId?: string, trigger?: PlaylistPreviewTrigger) {
@@ -1159,7 +1209,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     record("Could not load the selected inline playlist preview");
   }
   function syncPlaylistLayout() {
-    if (!session?.playlistContext) return;
+    if (!session || (chapterSideTab.hidden && playlistSideTab.hidden)) return;
     const fullscreen = document.fullscreenElement === session.host;
     const destination = fullscreen ? session.host : document.documentElement;
     if (playlistChrome.parentElement !== destination) destination.append(playlistChrome);
@@ -1177,11 +1227,18 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (!session?.playlistContext) return;
     if (open && typeof closeControlPages === "function") closeControlPages("playlist");
     playlistExpanded = open;
+    if (open) {
+      sidePanelTab = "playlist";
+      chapterPanel.hidden = true;
+      chapterButton.setAttribute("aria-expanded", "false");
+    } else if (sidePanelTab === "playlist") sidePanelTab = null;
+    chapterSideTab.setAttribute("aria-selected", String(sidePanelTab === "chapters"));
+    playlistSideTab.setAttribute("aria-selected", String(sidePanelTab === "playlist"));
+    playlistSurface.dataset.activeTab = sidePanelTab ?? "";
     playlistRevealed = false;
     playlistSurface.dataset.expanded = String(open);
     playlistSurface.dataset.revealed = "false";
     playlistButton.setAttribute("aria-expanded", String(open));
-    playlistHandle.setAttribute("aria-expanded", String(open));
     playlistElement("playlist-meta").textContent = playlist ? playlistInteractionHint(`${playlist.currentIndex + 1} / ${playlist.items.length}`) : playlistError || "Loading playlist…";
     if (open) queueMicrotask(() => { lastPlaylistScrollTop = playlistList.scrollTop; });
     if (!open && focusTrigger) playlistButton.focus({ preventScroll: true });
@@ -1236,28 +1293,109 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     });
     record("Requested an inline playlist preview");
   }
+  function setHoverSidePanelTab(tab: "chapters" | "playlist" | null) {
+    sidePanelTab = tab;
+    chapterPanel.hidden = tab !== "chapters";
+    playlistSurface.dataset.activeTab = tab ?? "";
+    chapterSideTab.setAttribute("aria-selected", String(tab === "chapters"));
+    playlistSideTab.setAttribute("aria-selected", String(tab === "playlist"));
+  }
+
+  function hideHoverSidePanel() {
+    playlistRevealed = false;
+    playlistSurface.dataset.revealed = "false";
+    setHoverSidePanelTab(null);
+  }
+
   function updatePlaylistHover(event: PointerEvent) {
-    if (!session?.playlistContext || playlistExpanded || event.pointerType === "touch") return;
-    if (overlaysOpen()) {
-      if (playlistRevealed) {
-        playlistRevealed = false;
-        playlistSurface.dataset.revealed = "false";
-      }
+    if (!session || (chapterSideTab.hidden && playlistSideTab.hidden) || event.pointerType === "touch") return;
+
+    // Panels opened from the bottom controls keep their existing close behavior.
+    if (playlistSurface.dataset.expanded === "true") return;
+
+    // Avoid revealing the side panel over unrelated control pages.
+    if (!element("controls").hidden || infoViewer.isOpen()) {
+      if (playlistRevealed) hideHoverSidePanel();
       return;
     }
+
     const rect = session.host.getBoundingClientRect();
-    const insideChrome = insidePlaylistChrome(event);
-    const playerRight = rect.left + rect.width;
-    const nearRight = event.clientX >= playerRight - 140 && event.clientX <= playerRight - 14 &&
-      event.clientY >= rect.top && event.clientY <= rect.top + rect.height;
-    const revealed = insideChrome || nearRight;
-    if (revealed === playlistRevealed) return;
-    playlistRevealed = revealed;
-    playlistSurface.dataset.revealed = String(revealed);
+    const geometry = playlistGeometry({
+      playerLeft: rect.left,
+      playerTop: rect.top,
+      playerWidth: rect.width,
+      playerHeight: rect.height,
+    });
+
+    const drawerRight = geometry.drawerLeft + geometry.drawerWidth;
+    const drawerBottom = geometry.drawerTop + geometry.drawerHeight;
+
+    const insidePanelY =
+      event.clientY >= geometry.drawerTop &&
+      event.clientY <= drawerBottom;
+
+    // Reveal tabs as soon as the pointer enters the panel area.
+    const insideRevealArea =
+      insidePanelY &&
+      event.clientX >= geometry.drawerLeft &&
+      event.clientX <= drawerRight;
+
+    // Open the matching page when the pointer enters the right half.
+    const insideOpenArea =
+      insidePanelY &&
+      event.clientX >= geometry.drawerLeft + geometry.drawerWidth / 2 &&
+      event.clientX <= drawerRight;
+
+    // After reveal, the entire tabs + panel rectangle keeps the UI visible.
+    const insideKeepArea =
+      event.clientX >= geometry.drawerLeft - 72 &&
+      event.clientX <= drawerRight &&
+      insidePanelY;
+
+    if (!playlistRevealed) {
+      if (!insideRevealArea) return;
+
+      playlistRevealed = true;
+      playlistSurface.dataset.revealed = "true";
+      setHoverSidePanelTab(null);
+    } else if (!insideKeepArea && !insidePlaylistChrome(event)) {
+      hideHoverSidePanel();
+      return;
+    }
+
+    if (!insideOpenArea || sidePanelTab) return;
+
+    let tab: "chapters" | "playlist";
+    if (chapterSideTab.hidden) tab = "playlist";
+    else if (playlistSideTab.hidden) tab = "chapters";
+    else {
+      const midpoint = geometry.drawerTop + geometry.drawerHeight / 2;
+      tab = event.clientY < midpoint ? "chapters" : "playlist";
+    }
+
+    setHoverSidePanelTab(tab); requestAnimationFrame(updateSidePanelScrollbars);
   }
   window.addEventListener("pointermove", updatePlaylistHover, true);
+  chapterSideTab.onclick = () => {
+    if (chapterSideTab.hidden) return;
+    if (playlistSurface.dataset.expanded === "true") {
+      if (sidePanelTab !== "chapters")
+        previewSession.dispatch({ type: "control", action: "toggle-chapters" });
+      return;
+    }
+    if (playlistRevealed) setHoverSidePanelTab("chapters");
+  };
+
+  playlistSideTab.onclick = () => {
+    if (playlistSideTab.hidden) return;
+    if (playlistSurface.dataset.expanded === "true") {
+      if (sidePanelTab !== "playlist")
+        previewSession.dispatch({ type: "control", action: "toggle-playlist", value: true });
+      return;
+    }
+    if (playlistRevealed) setHoverSidePanelTab("playlist");
+  };
   playlistButton.onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist" });
-  playlistHandle.onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist", value: true });
   playlistElement("playlist-close").onclick = () => previewSession.dispatch({ type: "control", action: "toggle-playlist", value: false });
   playlistPreviousButton.onclick = () => {
     if (!playlist || playlist.currentIndex <= 0) return;
@@ -1429,8 +1567,13 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (active && metadataRequestSource !== active.video.currentSrc) requestChapters();
     const chapters = metadata?.chapters ?? [];
     chapterButton.hidden = chapters.length === 0;
+    chapterSideTab.hidden = chapterButton.hidden;
+    playlistChrome.hidden = chapterButton.hidden && !session?.playlistContext;
+    if (!playlistChrome.hidden) syncPlaylistLayout();
     if (chapterButton.hidden) {
       chapterPanel.hidden = true;
+      if (sidePanelTab === "chapters") sidePanelTab = null;
+      chapterSideTab.setAttribute("aria-selected", "false");
       chapterButton.setAttribute("aria-expanded", "false");
     }
     const current = chapters.findLast(c => c.start <= (active?.video.currentTime ?? 0));
@@ -1441,7 +1584,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const signature = JSON.stringify([Boolean(active), metadata?.error, chapters]);
     if (signature !== chapterSignature) {
       chapterSignature = signature;
-      const list = element("chapter-list");
+      const list = chapterPanel.querySelector<HTMLElement>("#chapter-list")!;
       if (!chapters.length) {
         list.replaceChildren(node("p", {}, metadata?.error || (metadata ? "This video has no chapters." : active ? "Loading chapters…" : "Open a preview to view chapters.")));
         if (metadata?.error) { const retry = button("retry-chapters", "Try again"); retry.onclick = () => { requestChapters(); refreshChapters(); }; list.append(retry); }
@@ -1453,7 +1596,9 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         return item;
       }));
     }
-    for (const item of shadow.querySelectorAll<HTMLElement>(".chapter-item")) item.setAttribute("aria-current", String(Number(item.dataset.start) === current?.start));
+    for (const item of chapterPanel.querySelectorAll<HTMLElement>(".chapter-item"))
+      item.setAttribute("aria-current", String(Number(item.dataset.start) === current?.start));
+    requestAnimationFrame(updateSidePanelScrollbars);
   }
   function requestChapters() {
     if (!session) return;
@@ -2267,10 +2412,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const opening = chapterPanel.hidden;
     if (opening) closeControlPages("chapters"); else closeControlPages();
     chapterPanel.hidden = !opening;
+    sidePanelTab = opening ? "chapters" : null;
+    chapterSideTab.setAttribute("aria-selected", String(sidePanelTab === "chapters"));
+    playlistSideTab.setAttribute("aria-selected", String(sidePanelTab === "playlist"));
+    playlistSurface.dataset.activeTab = sidePanelTab ?? "";
+    playlistSurface.dataset.expanded = String(opening);
+    playlistRevealed = false;
+    playlistSurface.dataset.revealed = "false";
     chapterButton.setAttribute("aria-expanded", String(opening)); showProgress();
   }
   chapterButton.onclick = () => previewSession.dispatch({ type: "control", action: "toggle-chapters" });
-  element("close-chapters").onclick = () => { chapterPanel.hidden = true; chapterButton.setAttribute("aria-expanded", "false"); chapterButton.focus(); };
+  chapterPanel.querySelector<HTMLButtonElement>("#close-chapters")!.onclick = () => { chapterPanel.hidden = true; sidePanelTab = null; playlistSurface.dataset.activeTab = ""; playlistSurface.dataset.expanded = "false"; chapterSideTab.setAttribute("aria-selected", "false"); chapterButton.setAttribute("aria-expanded", "false"); chapterButton.focus(); };
   function toggleInfo() {
     const opening = !infoViewer.isOpen();
     if (opening) { closeControlPages("info"); infoViewer.toggle(); } else closeControlPages();
