@@ -2223,7 +2223,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   element("progress").oninput = () => previewSession.dispatch({ type: "control", action: "seek-to", value: Number(element<HTMLInputElement>("progress").value) });
   element("progress").onpointerdown = () => { scrubbing = true; showProgress(); };
   for (const name of ["pointerup", "pointercancel"]) window.addEventListener(name, () => {
-    if (scrubbing) { scrubbing = false; showProgress(); }
+    if (scrubbing) {
+      scrubbing = false;
+      element<HTMLInputElement>("progress").blur();
+      showProgress();
+    }
   }, true);
   element("speed").onchange = () => previewSession.dispatch({ type: "control", action: "set-speed", value: Number(element<HTMLSelectElement>("speed").value) });
   function requestQuality(choice: string, startup = false) {
