@@ -82,7 +82,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       },
       control(intent) {
         switch (intent.action) {
-          case "play": void play(); break;
+          case "play": if (!pendingPlaylistSelection) void play(); break;
           case "pause": session?.video.pause(); break;
           case "toggle-mute": toggleMute(); break;
           case "set-muted": setMuted(Boolean(intent.value)); break;
@@ -1561,6 +1561,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("enable").title = `${copy.inlineVideoPreviews}: ${enabled ? copy.on : copy.off}`;
     element("enabled-state").textContent = enabled ? copy.on : copy.off;
     for (const control of shadow.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>("[data-active]")) control.disabled = !session;
+    element<HTMLButtonElement>("play").disabled = !session || Boolean(pendingPlaylistSelection);
     element<HTMLButtonElement>("captions").disabled = !session || !(captionState?.available || captionChoice !== null);
     const fullscreen = Boolean(session && document.fullscreenElement === session.host);
     element("fullscreen").setAttribute("aria-label", fullscreen ? copy.exitFullscreen : copy.enterFullscreen);
@@ -2984,13 +2985,14 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   window.addEventListener("keydown", event => {
     if (!supportedPage() || event.composedPath().some(target => target instanceof Element && target.closest(shortsSelector))) return;
     if (event.code === "Escape" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
-        (overlaysOpen() || session)) {
+        (overlaysOpen() || session || loading)) {
       event.preventDefault(); event.stopImmediatePropagation();
       if (!event.repeat) {
         if (overlaysOpen()) closeControlPages();
         else if (session && (document.fullscreenElement === session.host || session.fullscreenRequested))
           previewSession.dispatch({ type: "control", action: "exit-fullscreen" });
         else if (session) previewSession.dispatch({ type: "close", reason: "escape" });
+        else if (loading) closePreview();
       }
       return;
     }
