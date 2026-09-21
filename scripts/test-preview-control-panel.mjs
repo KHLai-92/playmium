@@ -6,6 +6,7 @@ const manifest = JSON.parse(await readFile("dist-preview-prototype/manifest.json
 const controls = await readFile("dist-preview-prototype/preview.js", "utf8");
 const background = await readFile("dist-preview-prototype/preview-debug-log-background.js", "utf8");
 const source = await readFile("src/inline-preview.prototype.ts", "utf8");
+const uiLanguageSource = await readFile("src/preview-ui-language.ts", "utf8");
 const backgroundSource = await readFile("src/preview-debug-log.background.ts", "utf8");
 
 test("control panel URL search switch loads before preparation and persists with restore-all defaults", () => {
@@ -95,7 +96,7 @@ test("troubleshooting presents independent auto-save and current-log download co
 
 test("interface language selection is persistent and updates English and Traditional Chinese copy", () => {
   assert.ok(controls.includes("Interface language"));
-  assert.ok(controls.includes("Traditional Chinese"));
+  assert.ok(uiLanguageSource.includes('traditionalChinese: "繁體中文"'));
   assert.ok(source.includes("loadPreviewUiLanguage(chrome.storage.local, uiLanguageKey)"));
   assert.ok(source.includes("savePreviewUiLanguage(chrome.storage.local, uiLanguageKey, uiLanguage)"));
   assert.ok(source.includes("applyUiLanguage(uiLanguageSelect.value)"));

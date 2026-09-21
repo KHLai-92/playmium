@@ -1,18 +1,20 @@
 import { safeUrl, safeImage, type InfoResponse, type Comment, type CommentsPage, type RichRun } from './preview-info';
 import type { PageBridge } from './preview-page-bridge';
 import type { PreviewPageOperations } from './preview-page-operations';
+import type { PreviewUiCopy } from './preview-ui-language';
 
 type Owner = { video: HTMLVideoElement; host: HTMLElement; events: AbortController };
 export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | null, seek: (time: number) => void,
-  pageBridge: PageBridge<PreviewPageOperations, HTMLVideoElement>) {
+  pageBridge: PageBridge<PreviewPageOperations, HTMLVideoElement>, initialCopy: PreviewUiCopy) {
+  let copy = initialCopy;
   function el<K extends keyof HTMLElementTagNameMap>(tag: K, className = '', text = '') {
     const node = document.createElement(tag); node.className = className; node.textContent = text; return node;
   }
   function button(text: string, action: () => void) { const b = el('button', '', text); b.type = 'button'; b.onclick = action; return b; }
-  const root = el('div', 'info-viewer'); root.id = 'info-panel'; root.hidden = true; root.setAttribute('role', 'region'); root.setAttribute('aria-label', 'Video description and comments');
-  const header = el('div', 'info-header'); const close = button('×', hide); close.setAttribute('aria-label', 'Close description and comments'); header.append(el('strong', '', 'Video details'), close);
-  const tabs = el('div', 'info-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', 'Video details');
-  const descriptionTab = button('Description', () => select('description')), commentsTab = button('Comments', () => select('comments'));
+  const root = el('div', 'info-viewer'); root.id = 'info-panel'; root.hidden = true; root.setAttribute('role', 'region'); root.setAttribute('aria-label', copy.videoDescriptionAndComments);
+  const header = el('div', 'info-header'); const close = button('×', hide); close.setAttribute('aria-label', copy.closeDescriptionAndComments); const headerTitle = el('strong', '', copy.videoDetails); header.append(headerTitle, close);
+  const tabs = el('div', 'info-tabs'); tabs.setAttribute('role', 'tablist'); tabs.setAttribute('aria-label', copy.videoDetails);
+  const descriptionTab = button(copy.description, () => select('description')), commentsTab = button(copy.comments, () => select('comments'));
   descriptionTab.id = 'info-description-tab'; commentsTab.id = 'info-comments-tab';
   const description = el('div', 'info-body'); description.id = 'info-description';
   const comments = el('div', 'info-body'); comments.id = 'info-comments';
@@ -27,8 +29,25 @@ export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | nul
   let owner: Owner | null = null, selected: 'description' | 'comments' = 'description', requestId = 0, generation = 0;
   let descriptionLoaded = false, commentsLoaded = false;
   function current(expected: Owner, version: number) { return owner === expected && getOwner() === expected && generation === version; }
+  function localizedError(error: unknown, fallback = copy.couldNotLoadContent) {
+    const message = error instanceof Error ? error.message : '';
+    const translated: Record<string, string> = {
+      'Comments are unavailable for this video.': copy.commentsUnavailableForVideo,
+      'That comment page is no longer available.': copy.commentPageUnavailable,
+      'Comments could not be loaded.': copy.commentsCouldNotBeLoaded,
+      'Video information could not be loaded.': copy.videoInformationCouldNotBeLoaded,
+      'Video information was too large.': copy.videoInformationTooLarge,
+      'Video information is unavailable.': copy.videoInformationUnavailable,
+    };
+    return translated[message] ?? (message || fallback);
+  }
+  function pageMessage(message: string) {
+    if (message === 'No comments to show.') return copy.noCommentsToShow;
+    if (message === 'Comments are unavailable for this video.') return copy.commentsUnavailableForVideo;
+    return message;
+  }
   function request(kind: 'description' | 'comments', token?: string): Promise<InfoResponse> {
-    const active = getOwner(); if (!active) return Promise.reject(new Error('Open a preview first.'));
+    const active = getOwner(); if (!active) return Promise.reject(new Error(copy.openPreviewFirst));
     const id = ++requestId;
     return pageBridge.request(active.video, 'info', { source: active.video.currentSrc, requestId: id, kind, token }, { signal: active.events.signal })
       .then((result: InfoResponse) => {
@@ -59,18 +78,18 @@ export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | nul
   function expandable(parent: HTMLElement, text: HTMLElement, long: boolean) {
     parent.append(text); if (!long) return;
     text.classList.add('info-collapsed');
-    const toggle = button('Show more', () => { const collapsed = text.classList.toggle('info-collapsed'); toggle.textContent = collapsed ? 'Show more' : 'Show less'; });
+    const toggle = button(copy.showMore, () => { const collapsed = text.classList.toggle('info-collapsed'); toggle.textContent = collapsed ? copy.showMore : copy.showLess; });
     toggle.className = 'info-more'; parent.append(toggle);
   }
   function failure(container: HTMLElement, error: unknown, retry: () => void) {
-    container.replaceChildren(el('p', 'info-status', error instanceof Error ? error.message : 'Could not load this content.'), button('Try again', retry));
+    container.replaceChildren(el('p', 'info-status', localizedError(error)), button(copy.tryAgain, retry));
   }
   async function loadDescription() {
     const expected = owner!, version = generation;
-    description.replaceChildren(el('p', 'info-status', 'Loading description…'));
+    description.replaceChildren(el('p', 'info-status', copy.loadingDescription));
     try {
       const result = await request('description'); if (!current(expected, version)) return;
-      const data = result.description; if (!data || !Array.isArray(data.runs)) throw new Error('Description is unavailable.');
+      const data = result.description; if (!data || !Array.isArray(data.runs)) throw new Error(copy.descriptionUnavailable);
       description.replaceChildren(el('h2', 'info-title', data.title));
       const channel = el('div', 'info-owner'); const avatar = safeImage(data.avatar);
       if (avatar) { const img = el('img'); img.src = avatar; img.alt = ''; channel.append(img); }
@@ -84,53 +103,54 @@ export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | nul
     const article = el('article', 'info-comment'); article.dataset.commentId = comment.id;
     const avatar = safeImage(comment.avatar); if (avatar) { const img = el('img', 'info-avatar'); img.src = avatar; img.alt = ''; img.loading = 'lazy'; article.append(img); } else article.append(el('span'));
     const content = el('div'); const by = el('div', 'info-comment-author'); by.append(link(comment.author, comment.authorUrl));
-    if (comment.creator || comment.verified) by.append(el('span', 'info-badge', comment.creator ? 'Creator' : '✓'));
+    if (comment.creator || comment.verified) by.append(el('span', 'info-badge', comment.creator ? copy.creator : '✓'));
     const videoId = new URL(expected.host.querySelector<HTMLAnchorElement>("a[href*='/watch?']")!.href).searchParams.get('v');
     by.append(link(comment.published, `/watch?v=${videoId}&lc=${encodeURIComponent(comment.id)}`)); content.append(by);
     if (comment.pinned) content.append(el('div', 'info-badge', comment.pinned));
     const text = el('div', 'info-comment-text'); rich(text, [{ text: comment.text }]); expandable(content, text, comment.text.length > 280);
     const foot = el('div', 'info-comment-foot');
-    const likes = el('span', '', `👍 ${comment.likes || '0'}`); likes.setAttribute('aria-label', `${comment.likes || '0'} likes`); foot.append(likes); content.append(foot);
+    const likes = el('span', '', `👍 ${comment.likes || '0'}`); likes.setAttribute('aria-label', copy.likes(comment.likes || '0')); foot.append(likes); content.append(foot);
     if (comment.replies || comment.inlineReplies.length) {
       const replies = el('div', 'info-replies'); replies.hidden = true; let loaded = false;
       for (const child of comment.inlineReplies) replies.append(commentNode(child, expected, version));
-      const toggle = button(comment.replyLabel, () => {
-        replies.hidden = !replies.hidden; toggle.textContent = replies.hidden ? comment.replyLabel : 'Hide replies';
+      const replyLabel = () => comment.replyLabel === 'View replies' ? copy.viewReplies : comment.replyLabel;
+      const toggle = button(replyLabel(), () => {
+        replies.hidden = !replies.hidden; toggle.textContent = replies.hidden ? replyLabel() : copy.hideReplies;
         if (!replies.hidden && !loaded) { loaded = true; if (comment.replies) void loadReplyPage(comment.replies, replies, expected, version, true); }
       }); toggle.className = 'info-more'; content.append(toggle, replies);
     }
     article.append(content); return article;
   }
   async function loadReplyPage(token: string, target: HTMLElement, expected: Owner, version: number, append = false) {
-    const status = el('p', 'info-status', 'Loading replies…'); target.append(status);
+    const status = el('p', 'info-status', copy.loadingReplies); target.append(status);
     try {
       const result = await request('comments', token); if (!current(expected, version)) return;
-      status.remove(); const page = result.comments; if (!page) throw new Error('Replies are unavailable.');
+      status.remove(); const page = result.comments; if (!page) throw new Error(copy.repliesUnavailable);
       if (!append) target.replaceChildren();
       for (const item of page.items) target.append(commentNode(item, expected, version));
-      if (!page.items.length) target.append(el('p', 'info-status', page.message));
-      if (page.next) { const more = button('Load more replies', () => { more.remove(); void loadReplyPage(page.next!, target, expected, version, true); }); more.className = 'info-more'; target.append(more); }
-    } catch (error) { if (current(expected, version)) { status.remove(); target.append(el('p', 'info-status', error instanceof Error ? error.message : 'Replies could not be loaded.'), button('Try again', () => { target.replaceChildren(); void loadReplyPage(token, target, expected, version); })); } }
+      if (!page.items.length) target.append(el('p', 'info-status', pageMessage(page.message)));
+      if (page.next) { const more = button(copy.loadMoreReplies, () => { more.remove(); void(loadReplyPage(page.next!, target, expected, version, true)); }); more.className = 'info-more'; target.append(more); }
+    } catch (error) { if (current(expected, version)) { status.remove(); target.append(el('p', 'info-status', localizedError(error, copy.repliesCouldNotBeLoaded)), button(copy.tryAgain, () => { target.replaceChildren(); void loadReplyPage(token, target, expected, version); })); } }
   }
   let list = el('div'), sorts = el('div', 'info-sort'), more: HTMLButtonElement | null = null;
   let commentsVersion = 0;
   async function loadComments(token?: string, append = false) {
     const expected = owner!, version = generation, batch = append ? commentsVersion : ++commentsVersion;
     if (!append) { list = el('div'); sorts = el('div', 'info-sort'); comments.replaceChildren(sorts, list); }
-    const status = el('p', 'info-status', 'Loading comments…'); comments.append(status); more?.remove(); more = null;
+    const status = el('p', 'info-status', copy.loadingComments); comments.append(status); more?.remove(); more = null;
     try {
       const result = await request('comments', token); if (!current(expected, version) || batch !== commentsVersion) return;
-      status.remove(); const page: CommentsPage | undefined = result.comments; if (!page) throw new Error('Comments are unavailable.');
+      status.remove(); const page: CommentsPage | undefined = result.comments; if (!page) throw new Error(copy.commentsUnavailable);
       if (page.sorts.length) {
-        sorts.replaceChildren(el('div', 'info-count', page.count || 'Comments'));
+        sorts.replaceChildren(el('div', 'info-count', page.count || copy.comments));
         for (const sort of page.sorts) { const b = button(sort.label, () => void loadComments(sort.token)); b.setAttribute('aria-pressed', String(sort.selected)); sorts.append(b); }
       }
       const seen = new Set([...list.querySelectorAll<HTMLElement>('[data-comment-id]')].map(c => c.dataset.commentId));
       for (const item of page.items) if (!seen.has(item.id)) { list.append(commentNode(item, expected, version)); seen.add(item.id); }
-      if (!page.items.length && !append) list.append(el('p', 'info-status', page.message));
-      if (page.next) { more = button('Load more comments', () => void loadComments(page.next, true)); more.className = 'info-load'; comments.append(more); }
+      if (!page.items.length && !append) list.append(el('p', 'info-status', pageMessage(page.message)));
+      if (page.next) { more = button(copy.loadMoreComments, () => void loadComments(page.next, true)); more.className = 'info-load'; comments.append(more); }
       commentsLoaded = true;
-    } catch (error) { if (current(expected, version) && batch === commentsVersion) { status.remove(); comments.append(el('p', 'info-status', error instanceof Error ? error.message : 'Comments could not be loaded.'), button('Try again', () => void loadComments(token, append))); } }
+    } catch (error) { if (current(expected, version) && batch === commentsVersion) { status.remove(); comments.append(el('p', 'info-status', localizedError(error, copy.commentsCouldNotBeLoaded)), button(copy.tryAgain, () => void loadComments(token, append))); } }
   }
   function select(tab: 'description' | 'comments') {
     selected = tab; description.hidden = tab !== 'description'; comments.hidden = tab !== 'comments';
@@ -143,6 +163,21 @@ export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | nul
     if (root.hidden || ![descriptionTab, commentsTab].includes(target as HTMLButtonElement) || !['ArrowLeft', 'ArrowRight'].includes(event.key)) return;
     event.preventDefault(); event.stopImmediatePropagation(); select(selected === 'description' ? 'comments' : 'description'); (selected === 'description' ? descriptionTab : commentsTab).focus();
   }, true);
+  function applyCopy(next: PreviewUiCopy, language: string) {
+    const refresh = copy !== next && owner !== null;
+    copy = next; root.lang = language;
+    root.setAttribute('aria-label', copy.videoDescriptionAndComments);
+    close.setAttribute('aria-label', copy.closeDescriptionAndComments);
+    headerTitle.textContent = copy.videoDetails;
+    tabs.setAttribute('aria-label', copy.videoDetails);
+    descriptionTab.textContent = copy.description;
+    commentsTab.textContent = copy.comments;
+    if (refresh) {
+      generation++; descriptionLoaded = false; commentsLoaded = false;
+      description.replaceChildren(); comments.replaceChildren();
+      if (!root.hidden) select(selected);
+    }
+  }
   function reset() { generation++; owner = null; descriptionLoaded = false; commentsLoaded = false; description.replaceChildren(); comments.replaceChildren(); root.hidden = true; }
   function sync() { if (owner && owner !== getOwner()) reset(); }
   function hide() { root.hidden = true; }
@@ -151,5 +186,5 @@ export function createInfoViewer(shadow: ShadowRoot, getOwner: () => Owner | nul
     if (owner !== active) { reset(); owner = active; selected = 'description'; }
     root.hidden = !root.hidden; if (!root.hidden) select(selected);
   }
-  return { root, toggle, hide, sync, reset, isOpen: () => !root.hidden };
+  return { root, toggle, hide, sync, reset, applyCopy, isOpen: () => !root.hidden };
 }

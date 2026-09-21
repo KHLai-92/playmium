@@ -379,7 +379,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     return settingRow(label, input, output, `playlist-${stage}-timeout-label`);
   };
   const uiLanguageSelect = node("select", { id: "ui-language", "aria-label": "Interface language" },
-    node("option", { value: "en" }, "English"), node("option", { value: "zh-TW" }, "Traditional Chinese"));
+    node("option", { value: "en" }, "English"), node("option", { value: "zh-TW" }, "繁體中文"));
   const logAutoSaveInput = node("input", { id: "auto-save-logs", type: "checkbox", "aria-label": "Auto-save logs" });
   const videoIdSearchButton = node("button", { id: "video-id-search", type: "button", "aria-pressed": String(!urlSearchEnabled) }, "Video ID");
   const urlSearchButton = node("button", { id: "url-search", type: "button", "aria-pressed": String(urlSearchEnabled) }, "Full URL");
@@ -448,7 +448,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   shadow.append(shadow.getElementById("progress-display")!);
   shadow.append(node("div", { id: "top-controls", hidden: "" }, closeButton));
   const chapterPanel = node("section", { id: "chapter-panel", hidden: "", "aria-label": "Chapters" },
-    node("header", {}, node("strong", {}, "Chapters"), node("button", { id: "close-chapters", "aria-label": "Close chapters" }, "×")),
+    node("header", {}, node("strong", { id: "chapter-panel-title" }, "Chapters"), node("button", { id: "close-chapters", "aria-label": "Close chapters" }, "×")),
     node("div", { id: "chapter-list" }));
   shadow.append(chapterPanel);
   const resizeHandles = node("div", { id: "resize-handles", hidden: "", "aria-hidden": "true" },
@@ -598,7 +598,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const shortcutHelp = shadow.getElementById("shortcut-help")!;
   diagnostics.append(shadow.getElementById("message")!, audioButtons, shadow.getElementById("audio")!, shortcutHelp);
   const element = <T extends HTMLElement>(id: string) => shadow.getElementById(id) as T;
-  const infoViewer = createInfoViewer(shadow, () => session, seekTo, pageBridge);
+  const infoViewer = createInfoViewer(shadow, () => session, seekTo, pageBridge, previewUiCopy(defaultPreviewUiLanguage));
   const selectControls = createSelectControls(shadow, panel);
   // Keep our controls from reaching YouTube's delegated click/gesture handlers.
   for (const name of ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup", "keydown", "keyup"]) {
@@ -610,6 +610,60 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     uiLanguage = normalizePreviewUiLanguage(value);
     const copy = previewUiCopy(uiLanguage);
     panel.lang = uiLanguage;
+    infoViewer.applyCopy(copy, uiLanguage);
+    element("controls").setAttribute("aria-label", copy.inlinePreviewControlPanel);
+    element("control-tabs").setAttribute("aria-label", copy.controlPanelSections);
+    element("loading-retry").textContent = copy.tryAgain;
+    const chapterSideTabLabel = chapterSideTab.querySelector<HTMLElement>("span");
+    if (chapterSideTabLabel) chapterSideTabLabel.textContent = copy.chaptersLabel;
+    chapterSideTab.setAttribute("aria-label", copy.chaptersLabel);
+    chapterPanel.setAttribute("aria-label", copy.chaptersLabel);
+    playlistElement("chapter-panel-title").textContent = copy.chaptersLabel;
+    playlistElement("close-chapters").setAttribute("aria-label", copy.closeChapters);
+
+    for (const [control, label] of [
+      [playlistPreviousButton, copy.previousPlaylistVideo],
+      [playlistNextButton, copy.nextPlaylistVideo],
+      [captionsButton, copy.subtitlesShortcut],
+      [settingsButton, copy.settingsShortcut],
+      [closeButton, copy.closePreview],
+      [infoButton, copy.descriptionAndComments],
+    ] as const) {
+      control.setAttribute("aria-label", label);
+      control.dataset.tooltip = label;
+    }
+
+    element("progress").setAttribute("aria-label", copy.videoProgress);
+    element("volume").setAttribute("aria-label", copy.volume);
+    chapterSignature = "";
+    const playlistSideTabLabel = playlistSideTab.querySelector<HTMLElement>("span");
+    if (playlistSideTabLabel) playlistSideTabLabel.textContent = copy.playlistLabel;
+    playlistSideTab.setAttribute("aria-label", copy.playlistLabel);
+    sidePanelTabs.setAttribute("aria-label", copy.previewNavigation);
+    playlistList.setAttribute("aria-label", copy.videosInPlaylist);
+    playlistDrawer.setAttribute("aria-label", copy.playlistLabel);
+    playlistElement("playlist-close").setAttribute("aria-label", copy.closePlaylist);
+    const autoplayNextLabel = playlistAutoplayButton.querySelector<HTMLElement>(".playlist-autoplay-label");
+    if (autoplayNextLabel) autoplayNextLabel.textContent = copy.autoplayNextLabel;
+    playlistButton.dataset.tooltip = copy.playlistLabel;
+    if (!playlist) {
+      playlistElement("playlist-title").textContent = copy.playlistLabel;
+      if (!playlistError) playlistElement("playlist-meta").textContent = copy.loadingPlaylist;
+      playlistButton.setAttribute("aria-label", playlistError ? copy.playlistUnavailableRetry : copy.playlistLoading);
+    } else {
+      const position = `${playlist.currentIndex + 1} / ${playlist.items.length}`;
+      playlistElement("playlist-meta").textContent = copy.playlistInteractionHint(position);
+      playlistButton.setAttribute("aria-label", copy.playlistPosition(position));
+    }
+    const playlistRetry = playlistList.querySelector<HTMLButtonElement>(".playlist-error button");
+    if (playlistRetry) playlistRetry.textContent = copy.tryAgain;
+    const playlistLoadingStatus = playlistList.querySelector<HTMLElement>(".playlist-loading");
+    if (playlistLoadingStatus) playlistLoadingStatus.textContent = copy.loadingPlaylist;
+    for (const row of playlistList.querySelectorAll<HTMLElement>(".playlist-item")) {
+      const phase = row.dataset.previewState as "idle" | "preparing" | "ready" | "error" | "playing" | undefined;
+      const status = row.querySelector<HTMLElement>(".playlist-preview-state");
+      if (phase && status) status.textContent = playlistPreviewLabel(phase);
+    }
     uiLanguageSelect.value = uiLanguage;
     element("control-panel-title").textContent = copy.controlPanel;
     element("collapse").setAttribute("aria-label", copy.closeSettings);
@@ -930,8 +984,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistNextButton.disabled = !available || !playlist || playlist.currentIndex >= playlist.items.length - 1;
     playlistPreviousButton.style.opacity = playlistPreviousButton.disabled ? "0.35" : "1";
     playlistNextButton.style.opacity = playlistNextButton.disabled ? "0.35" : "1";
-    playlistPreviousButton.dataset.tooltip = "Previous playlist video (Shift+P)";
-    playlistNextButton.dataset.tooltip = "Next playlist video (Shift+N)";
+    playlistPreviousButton.dataset.tooltip = previewUiCopy(uiLanguage).previousPlaylistVideo;
+    playlistNextButton.dataset.tooltip = previewUiCopy(uiLanguage).nextPlaylistVideo;
     playlistAutoplayButton.setAttribute("aria-pressed", String(playlistAutoplay));
     const autoplayLabel = previewUiCopy(uiLanguage).autoplayNext(playlistAutoplay);
     playlistAutoplayButton.setAttribute("aria-label", autoplayLabel);
@@ -949,15 +1003,15 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (!available || !playlist) {
       playlistList.setAttribute("aria-busy", String(!playlistError));
       element("playlist-position").textContent = "";
-      playlistElement("playlist-title").textContent = "Playlist";
-      playlistElement("playlist-meta").textContent = playlistError || "Loading playlist…";
-      playlistButton.setAttribute("aria-label", playlistError ? "Playlist unavailable, retry" : "Playlist, loading");
+      playlistElement("playlist-title").textContent = previewUiCopy(uiLanguage).playlistLabel;
+      playlistElement("playlist-meta").textContent = playlistError || previewUiCopy(uiLanguage).loadingPlaylist;
+      playlistButton.setAttribute("aria-label", playlistError ? previewUiCopy(uiLanguage).playlistUnavailableRetry : previewUiCopy(uiLanguage).playlistLoading);
       if (playlistError) {
-        const retry = node("button", { type: "button" }, "Try again");
+        const retry = node("button", { type: "button" }, previewUiCopy(uiLanguage).tryAgain);
         retry.onclick = () => refreshPlaylist();
         playlistList.replaceChildren(node("div", { class: "playlist-error", role: "status" }, node("span", {}, playlistError), retry));
       } else {
-        playlistList.replaceChildren(node("div", { class: "playlist-loading", role: "status" }, "Loading playlist…"));
+        playlistList.replaceChildren(node("div", { class: "playlist-loading", role: "status" }, previewUiCopy(uiLanguage).loadingPlaylist));
       }
       return;
     }
@@ -966,7 +1020,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("playlist-position").textContent = position;
     playlistElement("playlist-title").textContent = playlist.title;
     playlistElement("playlist-meta").textContent = playlistInteractionHint(position);
-    playlistButton.setAttribute("aria-label", `Playlist, ${position}`);
+    playlistButton.setAttribute("aria-label", previewUiCopy(uiLanguage).playlistPosition(position));
     const rows = playlist.items.map((item, index) => {
       const number = node("span", { class: "playlist-number" }, index === playlist!.currentIndex ? "▶" : String(index + 1));
       const thumb = node("span", { class: "playlist-thumb" });
@@ -1156,11 +1210,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }, () => {});
   }
   function playlistInteractionHint(position: string) {
-    return `${position} · select a video`;
+    return previewUiCopy(uiLanguage).playlistInteractionHint(position);
   }
   function playlistPreviewLabel(state: "idle" | "preparing" | "ready" | "error" | "playing") {
-    return { idle: retainPlaylistPreviews ? "Hover to prepare" : "Click to play", preparing: "Preparing preview…", ready: "Ready",
-      error: "Preview unavailable", playing: "Playing" }[state];
+    const copy = previewUiCopy(uiLanguage);
+    return {
+      idle: retainPlaylistPreviews ? copy.hoverToPrepare : copy.clickToPlay,
+      preparing: copy.preparingPreview,
+      ready: copy.previewReady,
+      error: copy.previewUnavailable,
+      playing: copy.previewPlaying,
+    }[state];
   }
   function handlePlaylistSelectPhase(detail: PlaylistSelectPhase) {
     const active = session;
@@ -1185,7 +1245,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       emitPreviewDebugLog("preview.select-phase", { surface: "playlist", layer: "ui", actionId: pending.actionId,
         selectionRequestId: pending.requestId, videoId: pending.videoId, phase: "commit" });
       renderPlaylist();
-      element("loading-status").textContent = "Native preview ready. Starting playback…";
+      element("loading-status").textContent = previewUiCopy(uiLanguage).nativePreviewReadyStartingPlayback;
       record("Prepared the selected inline playlist preview");
       return;
     }
@@ -1259,7 +1319,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistSurface.dataset.expanded = String(open);
     playlistSurface.dataset.revealed = "false";
     playlistButton.setAttribute("aria-expanded", String(open));
-    playlistElement("playlist-meta").textContent = playlist ? playlistInteractionHint(`${playlist.currentIndex + 1} / ${playlist.items.length}`) : playlistError || "Loading playlist…";
+    playlistElement("playlist-meta").textContent = playlist ? playlistInteractionHint(`${playlist.currentIndex + 1} / ${playlist.items.length}`) : playlistError || previewUiCopy(uiLanguage).loadingPlaylist;
     if (open) queueMicrotask(() => { lastPlaylistScrollTop = playlistList.scrollTop; });
     if (!open && focusTrigger) playlistButton.focus({ preventScroll: true });
     showProgress();
@@ -1287,7 +1347,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistSelectionRetry = null;
     element("controls").hidden = true;
     element("preview-loading").hidden = false;
-    element("loading-status").textContent = `Preparing YouTube's native preview for “${item.title}”…`;
+    element("loading-status").textContent = previewUiCopy(uiLanguage).preparingNativePreview(item.title);
     element("loading-pulse").hidden = false;
     element("loading-retry").hidden = true;
     if (!active.video.paused) active.video.pause();
@@ -1503,8 +1563,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     for (const control of shadow.querySelectorAll<HTMLButtonElement | HTMLInputElement | HTMLSelectElement>("[data-active]")) control.disabled = !session;
     element<HTMLButtonElement>("captions").disabled = !session || !(captionState?.available || captionChoice !== null);
     const fullscreen = Boolean(session && document.fullscreenElement === session.host);
-    element("fullscreen").setAttribute("aria-label", fullscreen ? "Exit fullscreen" : "Enter fullscreen");
-    element("fullscreen").dataset.tooltip = fullscreen ? "Exit fullscreen (F / Esc)" : "Fullscreen (F)";
+    element("fullscreen").setAttribute("aria-label", fullscreen ? copy.exitFullscreen : copy.enterFullscreen);
+    element("fullscreen").dataset.tooltip = fullscreen ? copy.exitFullscreenTooltip : copy.enterFullscreenTooltip;
     element("top-controls").hidden = !loading && (!session || element("progress-display").hidden);
     element<HTMLButtonElement>("release").disabled = !session && !loading;
     resizeHandles.hidden = !session || fullscreen;
@@ -1515,12 +1575,12 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const v = session?.video;
     const playing = Boolean(v && !v.paused && !v.ended);
     element("play").dataset.playing = String(playing);
-    element("play").setAttribute("aria-label", playing ? "Pause" : "Play");
-    element("play").dataset.tooltip = playing ? "Pause (K / Space)" : "Play (K / Space)";
+    element("play").setAttribute("aria-label", playing ? copy.pauseLabel : copy.playLabel);
+    element("play").dataset.tooltip = playing ? copy.pauseTooltip : copy.playTooltip;
     const muted = Boolean(v && (session?.requestedMuted ?? v.muted));
     element("speaker").dataset.muted = String(muted);
-    element("speaker").setAttribute("aria-label", muted ? "Unmute" : "Mute");
-    element("speaker-tip").textContent = muted ? "Unmute" : "Mute";
+    element("speaker").setAttribute("aria-label", muted ? copy.unmute : copy.mute);
+    element("speaker-tip").textContent = muted ? copy.unmute : copy.mute;
     const spans = v ? ranges(v.seekable) : [];
     progress.disabled = !spans.length;
     progress.min = String(spans[0]?.[0] ?? 0);
@@ -1529,7 +1589,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const elapsed = formatTime(v?.currentTime ?? 0);
     const total = formatTime(v?.duration ?? NaN);
     element("time").textContent = `${elapsed} / ${total}`;
-    progress.setAttribute("aria-valuetext", `${elapsed} of ${total}`);
+    progress.setAttribute("aria-valuetext", copy.progressOf(elapsed, total));
     if (session) {
       const speed = element<HTMLSelectElement>("speed");
       const volume = element<HTMLInputElement>("volume");
@@ -1597,17 +1657,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       chapterButton.setAttribute("aria-expanded", "false");
     }
     const current = chapters.findLast(c => c.start <= (active?.video.currentTime ?? 0));
-    element("chapter-title").textContent = current?.title ?? "Chapters";
-    chapterButton.setAttribute("aria-label", current ? `Chapters: ${current.title}` : "Chapters");
-    chapterButton.dataset.tooltip = "View chapters";
+    element("chapter-title").textContent = current?.title ?? previewUiCopy(uiLanguage).chaptersLabel;
+    chapterButton.setAttribute("aria-label", current ? previewUiCopy(uiLanguage).chaptersCurrent(current.title) : previewUiCopy(uiLanguage).chaptersLabel);
+    chapterButton.dataset.tooltip = previewUiCopy(uiLanguage).viewChapters;
     chapterButton.setAttribute("aria-expanded", String(!chapterPanel.hidden));
     const signature = JSON.stringify([Boolean(active), metadata?.error, chapters]);
     if (signature !== chapterSignature) {
       chapterSignature = signature;
       const list = chapterPanel.querySelector<HTMLElement>("#chapter-list")!;
       if (!chapters.length) {
-        list.replaceChildren(node("p", {}, metadata?.error || (metadata ? "This video has no chapters." : active ? "Loading chapters…" : "Open a preview to view chapters.")));
-        if (metadata?.error) { const retry = button("retry-chapters", "Try again"); retry.onclick = () => { requestChapters(); refreshChapters(); }; list.append(retry); }
+        list.replaceChildren(node("p", {}, metadata?.error || (metadata ? previewUiCopy(uiLanguage).noChapters : active ? previewUiCopy(uiLanguage).loadingChapters : previewUiCopy(uiLanguage).openPreviewForChapters)));
+        if (metadata?.error) { const retry = button("retry-chapters", previewUiCopy(uiLanguage).tryAgain); retry.onclick = () => { requestChapters(); refreshChapters(); }; list.append(retry); }
       } else list.replaceChildren(...chapters.map(c => {
         const item = node("button", { class: "chapter-item", "data-start": String(c.start) },
           node("span", { class: "chapter-copy" }, node("span", {}, c.title), node("small", {}, formatTime(c.start))));
@@ -1656,10 +1716,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     const on = captionChoice ?? captionState?.enabled ?? false;
     element("captions").setAttribute("aria-pressed", String(on));
-    element("captions").dataset.tooltip = on ? "Hide subtitles (C)" : "Show subtitles (C)";
+    element("captions").dataset.tooltip = on ? previewUiCopy(uiLanguage).hideSubtitles : previewUiCopy(uiLanguage).showSubtitles;
     const language = element<HTMLSelectElement>("caption-language");
     const tracks = captionState?.tracks ?? [];
-    const options = tracks.length ? tracks : [{ id: "", label: "Unavailable" }];
+    const options = tracks.length ? tracks : [{ id: "", label: previewUiCopy(uiLanguage).unavailable }];
     const signature = JSON.stringify(options.map(t => [t.id, t.label]));
     if (language.dataset.options !== signature) {
       language.replaceChildren(...options.map(t => node("option", { value: t.id }, t.label)));
@@ -1785,7 +1845,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       session.animation = animatePlayer(host, true);
     }
     element("preview-loading").hidden = false;
-    element("loading-status").textContent = "Preparing preferred resolution…";
+    element("loading-status").textContent = previewUiCopy(uiLanguage).preparingPreferredResolution;
     element("loading-pulse").hidden = false;
     if (!video.paused) video.pause();
     host.addEventListener("pointermove", event => {
@@ -2337,7 +2397,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       [previewStartupAttemptsKey]: defaultPreviewStartupAttempts,
       [uiLanguageKey]: defaultPreviewUiLanguage,
     }).then(() => record("All Playmium settings restored to defaults"), () => {
-      restoreDefaultsButton.title = "Settings were restored for this page but could not be saved";
+      restoreDefaultsButton.title = previewUiCopy(uiLanguage).settingsRestoredSaveFailed;
     }).finally(() => { restoreDefaultsButton.disabled = false; });
   };
   function applyDefaultQuality(): boolean {
@@ -2364,7 +2424,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   for (const [id, answer] of [["heard", "User hears audio"], ["silent", "User reports silence"]]) {
     element(id).onclick = () => { heard = answer; record(answer); };
   }
-  element("collapse").title = "Hide/show controls: Alt+P";
+  element("collapse").title = previewUiCopy(uiLanguage).hideShowControlsShortcut;
   element("collapse").setAttribute("aria-controls", "controls");
   type ControlTab = "youtube" | "playmium";
   let selectedControlTab: ControlTab = "youtube";
@@ -2741,7 +2801,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     badge.dataset.previewState = phase;
     badge.style.color = phase === "preparing" ? "#f1c75b" :
       phase === "ready" ? "#5eead4" : "#dcece9";
-    badge.textContent = ({ idle: "Hover to prepare", preparing: "Preparing preview…", ready: "Ready", error: "Try again", playing: "Playing" } as Record<string, string>)[phase] ?? phase;
+    const copy = previewUiCopy(uiLanguage); badge.textContent = ({ idle: copy.hoverToPrepare, preparing: copy.preparingPreview, ready: copy.previewReady, error: copy.tryAgain, playing: copy.previewPlaying } as Record<string, string>)[phase] ?? phase;
   }
   function leaveThumbnail() {
     thumbnailHover.cancel();
@@ -3010,7 +3070,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const percent = Math.round(session.video.volume * 100);
     feedback.dataset.muted = String(session.video.muted || percent === 0);
     element("volume-feedback-fill").style.width = `${percent}%`;
-    element("volume-feedback-value").textContent = `${percent}%${session.video.muted ? " · Muted" : ""}`;
+    element("volume-feedback-value").textContent = `${percent}%${session.video.muted ? ` · ${previewUiCopy(uiLanguage).mutedFeedback}` : ""}`;
     feedback.dataset.visible = "true";
     feedback.setAttribute("aria-hidden", "false");
     clearTimeout(volumeFeedbackTimer);
@@ -3193,7 +3253,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     element("controls").hidden = true;
     element("preview-loading").hidden = false;
-    element("loading-status").textContent = attempt > 1 ? `Retrying preview (${attempt} / ${previewStartupAttempts})…` : "Starting video…";
+    element("loading-status").textContent = attempt > 1 ? previewUiCopy(uiLanguage).retryingPreview(attempt, previewStartupAttempts) : previewUiCopy(uiLanguage).startingVideo;
     element("loading-pulse").hidden = false;
     element("loading-retry").hidden = true;
     render();
@@ -3214,8 +3274,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         if (result.phase === "ready") { if (sharedLatency?.videoId === videoId) sharedLatency.firstFrameMs = Math.round(performance.now() - sharedLatency.startedAt); thumbnailState(target as HTMLElement, videoId, "playing"); tryPendingPin(); return; }
         pendingPin = null;
         thumbnailState(target as HTMLElement, videoId, "error");
-        activationMessage = result.error;
-        element("loading-status").textContent = result.error;
+        activationMessage = previewUiCopy(uiLanguage).previewError(result.error);
+        element("loading-status").textContent = activationMessage;
         element("loading-pulse").hidden = true; element("loading-retry").hidden = false;
         record(result.error);
       }, { signal: sharedUiEvents.signal });
@@ -3331,7 +3391,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         record(`Retrying preview startup (${request.attempt + 1} / ${previewStartupAttempts})`);
         return;
       }
-      activationMessage = "Preview unavailable. YouTube has not supplied video yet. Try again or close the preview.";
+      activationMessage = previewUiCopy(uiLanguage).previewUnavailableNoVideo;
       stopPreviewStartupWakes();
       element("loading-status").textContent = activationMessage;
       element("loading-pulse").hidden = true;

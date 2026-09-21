@@ -2,7 +2,10 @@ import assert from 'node:assert/strict';
 import vm from 'node:vm';
 import test from 'node:test';
 import {build} from 'esbuild';
-const built=await build({entryPoints:['src/preview-info-viewer.ts'],bundle:true,write:false,format:'iife',globalName:'InfoViewerModule',platform:'browser'});
+const built=await build({stdin:{contents:`
+export { createInfoViewer } from './src/preview-info-viewer.ts';
+export { previewUiCopy } from './src/preview-ui-language.ts';
+`,resolveDir:process.cwd(),loader:'ts'},bundle:true,write:false,format:'iife',globalName:'InfoViewerModule',platform:'browser'});
 const code=built.outputFiles[0].text;
 const flush=()=>new Promise(setImmediate);
 function scenario(){
@@ -27,7 +30,7 @@ function scenario(){
   setTimeout:fn=>{timers.set(++timerId,fn);return timerId;},clearTimeout:id=>timers.delete(id),
  };
  vm.runInNewContext(code,context);
- const api=context.InfoViewerModule.createInfoViewer(shadow,context.getOwner,context.seek,pageBridge);
+ const api=context.InfoViewerModule.createInfoViewer(shadow,context.getOwner,context.seek,pageBridge,context.InfoViewerModule.previewUiCopy('en'));
  const nodes=()=>{const all=n=>[n,...n.children.flatMap(all)];return all(shadow)};
  const respond=(i,payload)=>pending[i].resolve({requestId:requests[i].request.requestId,error:'',...payload});
  return {api,requests,seeks,timers,respond,find:id=>nodes().find(n=>n.id===id),button:text=>nodes().find(n=>n.textContent===text),resetOwner:()=>{owner.events.abort();owner=newOwner();api.sync();},text:()=>nodes().map(n=>n.textContent).join(' ')};
