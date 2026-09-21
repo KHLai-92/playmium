@@ -12,7 +12,7 @@ import { floatingRect, resizeRect, preferredQuality, type PreviewRect } from "./
 import { createSelectControls } from "./preview-select";
 import { type PreviewMetadata } from "./preview-metadata";
 import { createInfoViewer } from "./preview-info-viewer";
-import { collectionPlaylistId, defaultPlaylistAutoplayEnabled, defaultPlaylistBrokerTimeoutMultipliers,
+import { collectionPlaylistId, isPlaylistId, defaultPlaylistAutoplayEnabled, defaultPlaylistBrokerTimeoutMultipliers,
   defaultPlaylistStageRetryLimit, loadPlaylistAutoplayPreference, loadPlaylistBrokerTimeoutMultipliers,
   loadPlaylistPreviewRetentionCapacity, loadPlaylistStageRetryLimit, maximumPlaylistBrokerTimeoutMultiplier,
   minimumPlaylistBrokerTimeoutMultiplier, nextPlaylistAutoplayVideoId, normalizePlaylistBrokerTimeoutMultipliers,
@@ -862,9 +862,27 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   }, { capture: true, passive: true });
   const sourceCardSelector = "ytd-video-renderer,ytd-radio-renderer,ytd-playlist-renderer,ytd-rich-item-renderer,yt-lockup-view-model";
   const collectionMarkerSelector = "yt-collection-thumbnail-view-model,ytd-playlist-thumbnail";
+  function collectionContextFor(target: Element): PlaylistContext | undefined {
+    const card = target.closest<HTMLElement>(sourceCardSelector);
+    const anchor = target.closest<HTMLAnchorElement>("a[href*='/playlist?']") ??
+      card?.querySelector<HTMLAnchorElement>("a[href*='/playlist?']");
+    if (!anchor) return;
+
+    try {
+      const url = new URL(anchor.href, location.href);
+      const playlistId = url.searchParams.get("list");
+      if (url.origin !== location.origin || url.pathname !== "/playlist" ||
+          !playlistId || !isPlaylistId(playlistId)) return;
+      return { playlistId, href: url.href };
+    } catch { return; }
+  }
   function playlistContextFor(target: Element, videoId: string): PlaylistContext | undefined {
     const preview = target.closest(previewSelector);
     const selectedHref = target.closest<HTMLAnchorElement>("a[href*='/watch?']")?.href ?? preview?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
+    if (!selectedHref) {
+      const collection = collectionContextFor(target);
+      if (collection) return collection;
+    }
     const selectedList = selectedHref ? new URL(selectedHref, location.href).searchParams.get("list") : null;
     const directCard = target.closest<HTMLElement>(sourceCardSelector);
     const previewRect = preview?.getBoundingClientRect();
@@ -2851,7 +2869,33 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (!session) {
       if (!enabled || !supportedPage() || event.button !== 0 || event.altKey || event.ctrlKey || event.metaKey || event.shiftKey || !(event.target instanceof Element)) return;
       const entry = resolvePreviewThumbnail(event.target, location.href);
-      if (!entry) return;
+      if (!entry) {
+        const target = event.target.closest<HTMLElement>(previewThumbnailSelector);
+        const collection = target ? collectionContextFor(target) : undefined;
+        if (!target || !collection) return;
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        void pageBridge.request(document, "playlist-first-video", {
+          playlistId: collection.playlistId,
+        }).then(result => {
+          if (result.error || !result.videoId || !target.isConnected || session || loading) return;
+
+          emitPreviewDebugLog("preview.click", {
+            surface: "thumbnail",
+            videoId: result.videoId,
+            playlistId: result.playlistId,
+          });
+
+          previewSession.dispatch({
+            type: "activate",
+            videoId: result.videoId,
+            target,
+          });
+        }, () => {});
+        return;
+      }
       const videoId = entry.videoId;
       event.preventDefault(); event.stopImmediatePropagation();
       emitPreviewDebugLog("preview.click", { surface: "thumbnail", videoId });

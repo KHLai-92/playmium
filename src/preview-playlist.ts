@@ -7,6 +7,8 @@ export const playlistPrefetchCancelEvent = "skip-ads-preview-playlist-prefetch-c
 export const playlistPreviewRetentionEvent = "skip-ads-preview-playlist-retention";
 export const playlistPreviewWarmPhaseEvent = "skip-ads-preview-playlist-warm-phase";
 export const playlistWarmEvent = "skip-ads-preview-playlist-warm";
+export const playlistFirstVideoRequestEvent = "skip-ads-preview-playlist-first-video-request";
+export const playlistFirstVideoResponseEvent = "skip-ads-preview-playlist-first-video-response";
 export const playlistAudioChangeEvent = "skip-ads-preview-playlist-audio-change";
 export const playlistBrokerClickEvent = "skip-ads-preview-playlist-broker-click";
 // Hover intent is delayed and the broker permits one current logical job, so
@@ -265,6 +267,26 @@ export function collectionPlaylistId(href: string, isCollection: boolean, base =
 
 export function isPlaylistId(value: string): boolean {
   return /^[\w-]{2,120}$/.test(value);
+}
+export function firstPlaylistVideoId(data: unknown): string | null {
+  const stack: unknown[] = [data];
+  let visited = 0;
+
+  while (stack.length && visited++ < 100000) {
+    const value = stack.pop();
+    if (!value || typeof value !== "object") continue;
+
+    const record = value as Record<string, any>;
+    const renderer = record.playlistVideoRenderer ?? record.playlistPanelVideoRenderer;
+    const videoId = renderer?.videoId;
+
+    if (typeof videoId === "string" && /^[\w-]{11}$/.test(videoId)) return videoId;
+
+    const children = Object.values(record);
+    for (let index = children.length - 1; index >= 0; index--) stack.push(children[index]);
+  }
+
+  return null;
 }
 
 export function playlistSeedFromLinks(

@@ -7,6 +7,8 @@ import {
   type PlaylistBrokerTimeoutMultipliers,
   playlistPrefetchEvent,
   playlistPreviewWarmPhaseEvent,
+  playlistFirstVideoRequestEvent,
+  playlistFirstVideoResponseEvent,
   playlistRequestEvent,
   playlistResponseEvent,
   playlistSelectEvent,
@@ -39,6 +41,7 @@ export type PreviewPageOperations = {
   quality: { input: { source: string; quality?: string }; output: QualityState };
   captions: { input: { source: string; enabled?: boolean; track?: string; translation?: string }; output: CaptionState };
   metadata: { input: { source: string }; output: PreviewMetadata };
+  "playlist-first-video": { input: { playlistId: string }; output: { playlistId: string; videoId: string; error: string } };
   info: { input: { source: string; requestId: number; kind: "description" | "comments"; token?: string }; output: InfoResponse };
   "playlist-prime": { input: { actionId: string; startedAtMs: number; trigger: PlaylistPreviewTrigger; videoId: string; playlistId: string;
     retentionCapacity: number; retryLimit: number; timeoutMultipliers: PlaylistBrokerTimeoutMultipliers;
@@ -108,6 +111,9 @@ const playlistItem = (value: unknown) => objectRecord(value) &&
 const playlist = (value: unknown): value is PreviewPlaylist => objectRecord(value) && stringField(value, "source") &&
   stringField(value, "playlistId") && stringField(value, "videoId") && stringField(value, "title") &&
   Number.isSafeInteger(value.currentIndex) && Array.isArray(value.items) && value.items.every(playlistItem) && stringField(value, "error");
+const playlistFirstVideo = (value: unknown): value is { playlistId: string; videoId: string; error: string } =>
+  objectWithString(value, "playlistId") &&
+  typeof value.videoId === "string" && (!value.videoId || /^[\w-]{11}$/.test(value.videoId)) && typeof value.error === "string";
 const primePhase = (value: unknown): value is PlaylistPrimePhase => objectWithString(value, "videoId") &&
   typeof value.actionId === "string" && ["hover", "focus", "click"].includes(String(value.trigger)) &&
   ["idle", "preparing", "ready", "error"].includes(String(value.phase)) && optionalStringField(value, "error");
@@ -142,6 +148,9 @@ export const previewPageOperations: { [K in keyof PreviewPageOperations]: Previe
   captions: operation("captions", captionRequestEvent, captionResponseEvent, 3000, captionState, matchesLegacyFields("source")),
   metadata: operation("metadata", metadataRequestEvent, metadataResponseEvent, 20_000, metadataState, matchesLegacyFields("source")),
   info: operation("info", infoRequestEvent, infoResponseEvent, 20_000, infoState, matchesLegacyFields("source", "requestId")),
+  "playlist-first-video": operation("playlist-first-video",
+    playlistFirstVideoRequestEvent, playlistFirstVideoResponseEvent, 20_000,
+    playlistFirstVideo, matchesLegacyFields("playlistId")),
   // A prepared response may remain ready for 30 seconds before its terminal
   // idle event, in addition to the time YouTube needs to prepare it.
   "playlist-prime": operation("playlist-prime", playlistPrefetchEvent, playlistPreviewWarmPhaseEvent, 60_000, primePhase,

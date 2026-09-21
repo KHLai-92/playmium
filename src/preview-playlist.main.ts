@@ -2,10 +2,10 @@ import { bindPlaylistSource, extractPlaylist, isPlaybackTroubleNotification,
   isPlaylistId, normalizePlaylistBrokerTimeoutMultipliers, normalizePlaylistPreviewRetentionCapacity, normalizePlaylistSeed,
   normalizePlaylistStageRetryLimit,
   playlistPrefetchEvent, playlistRequestEvent, playlistPrefetchCancelEvent, playlistPreviewRetentionEvent, playlistResponseEvent,
-  playlistSelectEvent, playlistSelectPhaseEvent, playlistWarmEvent, type PreviewPlaylist,
+  playlistFirstVideoRequestEvent, playlistFirstVideoResponseEvent, playlistSelectEvent, playlistSelectPhaseEvent, playlistWarmEvent, type PreviewPlaylist,
   type PlaylistPreviewTrigger, type PreviewPlaylistSeed, validatedPlaylistPlayerResponse } from "./preview-playlist";
 import { cancelPreviewPreparation, preparePreview, previewVideo, setPreviewRetentionCapacity } from "./preview-playback.experiment";
-import { loadWatchPage } from "./preview-watch-data.main";
+import { loadPlaylistFirstVideoId, loadWatchPage } from "./preview-watch-data.main";
 import { qualityLabels } from "./preview-quality";
 import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-catalog";
 
@@ -72,6 +72,30 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
     video.dispatchEvent(new CustomEvent(playlistResponseEvent, { detail: JSON.stringify(provisional ? { ...current, provisional: true } : current) }));
     return current;
   }
+  document.addEventListener(playlistFirstVideoRequestEvent, event => {
+    if (event.target !== document) return;
+    const detail = (event as CustomEvent).detail;
+    if (typeof detail !== "string" || detail.length > 2048) return;
+
+    let request: { playlistId?: unknown };
+    try { request = JSON.parse(detail); } catch { return; }
+    if (typeof request.playlistId !== "string" || !isPlaylistId(request.playlistId)) return;
+
+    const playlistId = request.playlistId;
+    void loadPlaylistFirstVideoId(playlistId).then(videoId => {
+      document.dispatchEvent(new CustomEvent(playlistFirstVideoResponseEvent, {
+        detail: JSON.stringify({ playlistId, videoId, error: "" }),
+      }));
+    }, error => {
+      document.dispatchEvent(new CustomEvent(playlistFirstVideoResponseEvent, {
+        detail: JSON.stringify({
+          playlistId,
+          videoId: "",
+          error: error instanceof Error ? error.message : "Playlist information could not be loaded.",
+        }),
+      }));
+    });
+  }, true);
   document.addEventListener(playlistWarmEvent, event => {
     if (event.target !== document) return;
     const detail = (event as CustomEvent).detail;

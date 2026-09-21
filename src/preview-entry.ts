@@ -46,7 +46,7 @@ export function previewPlaybackSupport(target: Element, videoId: string, pathnam
     return { native: false, reason: "animated-thumbnail" };
   }
   if (target.closest("ytd-notification-renderer,ytd-playlist-video-renderer,ytd-playlist-panel-video-renderer") ||
-      card?.matches("yt-lockup-view-model") && (pathname === "/feed/history" || pathname === "/watch" ||
+      card?.matches("yt-lockup-view-model") && (pathname === "/feed/history" || pathname === "/watch" || /^\/channel\/[^/]+$/.test(pathname) || /^\/@[^/]+$/.test(pathname) ||
         /\/videos$/.test(pathname) && grid?.hasAttribute("is-slim-grid"))) {
     return { native: false, reason: "non-inline-renderer" };
   }
