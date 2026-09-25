@@ -3,13 +3,13 @@ import { build } from "esbuild";
 import { mkdir, writeFile, cp, rm, readFile } from "node:fs/promises";
 import path from "node:path";
 
-const outdir = path.resolve("dist-preview-prototype");
+const outdir = path.resolve("dist-playmium");
 const { version } = JSON.parse(await readFile("package.json", "utf8"));
 await rm(outdir, { recursive: true, force: true });
 await mkdir(outdir, { recursive: true });
 await build({
   entryPoints: {
-    preview: "src/inline-preview.prototype.ts",
+    preview: "src/inline-preview.ts",
     "preview-main": "src/preview-main.ts",
     "preview-debug-log-background": "src/preview-debug-log.background.ts",
   },
@@ -46,4 +46,4 @@ await writeFile(path.join(outdir, "manifest.json"), JSON.stringify({
     run_at: "document_start",
   }],
 }, null, 2) + "\n");
-console.log(`Prototype built: ${outdir}\nPreview mode defaults on. Native entries stay native; other videos use the shared preview interface. Alt+P opens controls. Shorts keep native behavior.`);
+console.log(`Extension built: ${outdir}\nPreview mode defaults on. Native entries stay native; other videos use the shared preview interface. Alt+P opens controls. Shorts keep native behavior.`);

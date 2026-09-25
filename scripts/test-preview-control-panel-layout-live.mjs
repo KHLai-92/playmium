@@ -4,7 +4,7 @@ import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 
-const extensionPath = path.resolve("dist-preview-prototype");
+const extensionPath = path.resolve("dist-playmium");
 const userDataDir = await mkdtemp(path.join(os.tmpdir(), "playmium-layout-"));
 const context = await chromium.launchPersistentContext(userDataDir, {
   headless: true,
@@ -25,7 +25,7 @@ try {
   await page.goto("https://www.youtube.com/");
   await page.waitForTimeout(500);
 
-  const host = page.locator("#skip-ads-preview-prototype");
+  const host = page.locator("#playmium-preview");
   await page.keyboard.press("Alt+P");
   const outOfPlayerControlsBox = await page.locator("#controls").boundingBox();
   assert.ok(outOfPlayerControlsBox, "out-of-player controls must be measurable");

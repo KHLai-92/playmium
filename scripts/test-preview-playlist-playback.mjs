@@ -70,7 +70,7 @@ test("playlist playback restoration listens only when the player response is rea
 });
 
 test("playlist commit takes its audio-generation baseline after broker preparation", async () => {
-  const source = await readFile("src/preview-playback.experiment.ts", "utf8");
+  const source = await readFile("src/preview-playback.ts", "utf8");
   const brokerReady = source.indexOf("const supplied = await abortable(pending");
   const audioBaseline = source.indexOf("const audioVersion =", brokerReady);
   const listening = source.indexOf("playback?.listen()", brokerReady);

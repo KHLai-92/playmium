@@ -40,7 +40,7 @@ test("playlist response retention preference survives a page reload", async () =
     async get(key) { return { [key]: values[key] }; },
     async set(next) { Object.assign(values, next); },
   };
-  const key = "skipAds.inlinePreviewPrototype.playlistPreviewRetentionCapacity";
+  const key = "playmium.inlinePreview.playlistPreviewRetentionCapacity";
   assert.equal(await loadPlaylistPreviewRetentionCapacity(storage, key), 1);
   await savePlaylistPreviewRetentionCapacity(storage, key, 3);
   assert.equal(await loadPlaylistPreviewRetentionCapacity(storage, key), 3);

@@ -45,7 +45,7 @@ test("playlist broker honors the persisted per-stage retry limit", async () => {
     installed = top.installPlaylistTopBroker();
     const video = Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
     const videoId = "vid00000021";
     const pending = top.primePlaylistPreviewResponse(video, videoId, { left: 10, top: 10, width: 100, height: 60 }, {

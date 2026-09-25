@@ -37,16 +37,37 @@ import { defaultPreviewUiLanguage, loadPreviewUiLanguage, normalizePreviewUiLang
 
 import { previewPageSupported, previewPlaybackSupport, resolvePreviewHost, resolvePreviewThumbnail, previewThumbnailSelector } from "./preview-entry";
 import { sharedPreviewPrepareEvent, sharedPreviewCancelEvent, sharedPreviewStartEvent, sharedPreviewResultEvent,
-  type SharedPreviewResult } from "./preview-playback-experiment-events";
+  type SharedPreviewResult } from "./preview-playback-events";
 import { playlistPreviewWarmPhaseEvent } from "./preview-playlist";
 import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewSearchModeEvent,
   previewUrlSearchKey } from "./preview-search-preference";
+import { createPreviewPreferenceStorage } from "./preview-preference-storage";
 
 (async () => {
   if (window !== window.top) return;
+  const enabledKey = "playmium.inlinePreview.enabled";
+  const playlistPreviewRetentionCapacityKey = "playmium.inlinePreview.playlistPreviewRetentionCapacity";
+  const playlistStageRetryLimitKey = "playmium.inlinePreview.playlistStageRetryLimit";
+  const playlistBrokerTimeoutMultipliersKey = "playmium.inlinePreview.playlistBrokerTimeoutMultipliers";
+  const playlistAutoplayKey = "playmium.inlinePreview.playlistAutoplay";
+  const previewStartupTimeoutKey = "playmium.inlinePreview.startupTimeoutSeconds";
+  const previewStartupAttemptsKey = "playmium.inlinePreview.startupAttempts";
+  const uiLanguageKey = "playmium.inlinePreview.uiLanguage";
+  const logAutoSaveKey = "debugLoggingEnabled";
+  const preferenceStorage = createPreviewPreferenceStorage(chrome.storage.local, [
+    { key: previewUrlSearchKey, legacySuffix: ".urlSearchEnabled" },
+    { key: enabledKey, legacySuffix: ".enabled" },
+    { key: playlistPreviewRetentionCapacityKey, legacySuffix: ".playlistPreviewRetentionCapacity" },
+    { key: playlistStageRetryLimitKey, legacySuffix: ".playlistStageRetryLimit" },
+    { key: playlistBrokerTimeoutMultipliersKey, legacySuffix: ".playlistBrokerTimeoutMultipliers" },
+    { key: playlistAutoplayKey, legacySuffix: ".playlistAutoplay" },
+    { key: previewStartupTimeoutKey, legacySuffix: ".startupTimeoutSeconds" },
+    { key: previewStartupAttemptsKey, legacySuffix: ".startupAttempts" },
+    { key: uiLanguageKey, legacySuffix: ".uiLanguage" },
+  ]);
   let urlSearchEnabled = defaultPreviewUrlSearchEnabled;
   let updateSearchControl = () => {};
-  const searchPreference = createPreviewSearchPreference(chrome.storage.local, value => {
+  const searchPreference = createPreviewSearchPreference(preferenceStorage, value => {
     urlSearchEnabled = value;
     window.dispatchEvent(new CustomEvent(previewSearchModeEvent, { detail: JSON.stringify(value) }));
     updateSearchControl();
@@ -115,10 +136,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       panel.dataset.sessionVideoId = view.videoId;
     },
   });
-  const prototypeVersion = previewDebugLogVersion;
-  const hostClass = "skip-ads-preview-prototype-pinned";
-  const ancestorClass = "skip-ads-preview-prototype-ancestor";
-  const videoClass = "skip-ads-preview-prototype-video";
+  const playmiumVersion = previewDebugLogVersion;
+  const hostClass = "playmium-preview-pinned";
+  const ancestorClass = "playmium-preview-ancestor";
+  const videoClass = "playmium-preview-video";
   const previewSelector = "ytd-video-preview, #inline-preview-player, #video-preview, [data-skip-preview-owned]";
   const shortsSelector = "ytd-reel-video-renderer,ytd-reel-item-renderer,ytm-shorts-lockup-view-model,ytm-shorts-lockup-view-model-v2,yt-shorts-lockup-view-model,a[href^='/shorts/'],a[href*='youtube.com/shorts/']";
   type AudioVideo = HTMLVideoElement & {
@@ -174,15 +195,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let dragging: { owner: Session; pointerId: number; x: number; y: number; rect: PreviewRect; moved: boolean } | null = null;
   let suppressDragClickUntil = 0;
   let resizing: { owner: Session; pointerId: number; edge: string; x: number; y: number; rect: PreviewRect } | null = null;
-  const enabledKey = "skipAds.inlinePreviewPrototype.enabled";
-  const playlistPreviewRetentionCapacityKey = "skipAds.inlinePreviewPrototype.playlistPreviewRetentionCapacity";
-  const playlistStageRetryLimitKey = "skipAds.inlinePreviewPrototype.playlistStageRetryLimit";
-  const playlistBrokerTimeoutMultipliersKey = "skipAds.inlinePreviewPrototype.playlistBrokerTimeoutMultipliers";
-  const playlistAutoplayKey = "skipAds.inlinePreviewPrototype.playlistAutoplay";
-  const previewStartupTimeoutKey = "skipAds.inlinePreviewPrototype.startupTimeoutSeconds";
-  const previewStartupAttemptsKey = "skipAds.inlinePreviewPrototype.startupAttempts";
-  const uiLanguageKey = "skipAds.inlinePreviewPrototype.uiLanguage";
-  const logAutoSaveKey = "debugLoggingEnabled";
   let enabled = true;
   let playlistPreviewRetentionCapacity = defaultPlaylistPreviewRetentionCapacity;
   let playlistStageRetryLimit = defaultPlaylistStageRetryLimit;
@@ -231,7 +243,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   backdrop.hidden = true;
   backdrop.setAttribute("aria-hidden", "true");
   backdrop.style.cssText = "position:fixed;inset:0;z-index:2147483645;background:transparent;pointer-events:auto;touch-action:pan-y";
-  panel.id = "skip-ads-preview-prototype";
+  panel.id = "playmium-preview";
   panel.style.cssText = "position:fixed;right:16px;bottom:16px;width:464px;height:calc(100vh - 32px);z-index:2147483647!important;max-width:calc(100vw - 32px);";
   const shadow = panel.attachShadow({ mode: "open" });
   playlistChrome.id = "skip-ads-preview-playlist";
@@ -465,7 +477,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
             node("pre", { id: "state", hidden: "" })))),
     ),
   ));
-  // The viewing timeline stays available even when the experiment panel is
+  // The viewing timeline stays available even when the control panel is
   // minimized. Keep it at the bottom of the video, like a normal player.
   shadow.append(shadow.getElementById("progress-display")!);
   shadow.append(node("div", { id: "top-controls", hidden: "" }, closeButton));
@@ -1004,10 +1016,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   uiLanguageSelect.onchange = () => {
     uiLanguagePreferenceChanged = true;
     applyUiLanguage(uiLanguageSelect.value);
-    void savePreviewUiLanguage(chrome.storage.local, uiLanguageKey, uiLanguage);
+    void savePreviewUiLanguage(preferenceStorage, uiLanguageKey, uiLanguage);
     record(`Interface language set to ${uiLanguage}`);
   };
-  void loadPreviewUiLanguage(chrome.storage.local, uiLanguageKey).then(
+  void loadPreviewUiLanguage(preferenceStorage, uiLanguageKey).then(
     value => { if (!uiLanguagePreferenceChanged) applyUiLanguage(value); },
     () => { if (!uiLanguagePreferenceChanged) applyUiLanguage(defaultPreviewUiLanguage); },
   );
@@ -1785,17 +1797,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     .${hostClass}:fullscreen{inset:0!important;width:100vw!important;height:100vh!important;border:none!important;outline:none!important;border-radius:0!important;box-shadow:none!important}
     .${hostClass} .${ancestorClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
     .${hostClass} .${videoClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;transform:none!important;}
-    .${hostClass} #skip-ads-preview-prototype{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;pointer-events:none!important}
-    .${hostClass}:fullscreen #skip-ads-preview-prototype{border:none!important;outline:none!important;box-shadow:none!important}
+    .${hostClass} #playmium-preview{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;pointer-events:none!important}
+    .${hostClass}:fullscreen #playmium-preview{border:none!important;outline:none!important;box-shadow:none!important}
   `;
   const supportedPage = () => previewPageSupported(location.pathname);
   const ranges = (value: TimeRanges) => Array.from({ length: value.length }, (_, i) => [value.start(i), value.end(i)]);
   function snapshot() {
-    if (!session) return { version: prototypeVersion, experiment: "shared-preview", sharedLatency, attached: false, enabled, autoSaveLogs, message, loading: !!loading,
+    if (!session) return { version: playmiumVersion, component: "shared-preview", sharedLatency, attached: false, enabled, autoSaveLogs, message, loading: !!loading,
       requestedVideo: pendingPin?.videoId ?? loading?.videoId };
     const v = session.video;
     return {
-      version: prototypeVersion, experiment: "shared-preview", sharedLatency, attached: v.isConnected, enabled, autoSaveLogs, page: location.href, host: session.host.tagName.toLowerCase(),
+      version: playmiumVersion, component: "shared-preview", sharedLatency, attached: v.isConnected, enabled, autoSaveLogs, page: location.href, host: session.host.tagName.toLowerCase(),
       pageVisibility: document.visibilityState, documentHasFocus: document.hasFocus(),
       hostId: session.host.id, paused: v.paused, ended: v.ended,
       wantsPlayback: session.wantsPlayback,
@@ -2176,7 +2188,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     active.startupQualityPending = false;
     if (sharedLatency?.videoId === active.videoId) {
       sharedLatency.visibleMs = Math.round(performance.now() - sharedLatency.startedAt);
-      emitPreviewDebugLog("preview.experiment-visible", { ...sharedLatency });
+      emitPreviewDebugLog("preview.visible", { ...sharedLatency });
     }
     element("preview-loading").hidden = true;
     element("loading-pulse").hidden = true;
@@ -2408,7 +2420,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     enabled = !enabled;
     pendingPin = null;
     activationMessage = "";
-    void chrome.storage.local.set({ [enabledKey]: enabled });
+    void preferenceStorage.set({ [enabledKey]: enabled });
     if (!enabled) {
       release("Preview mode is off. YouTube clicks work normally.");
       // Keep the switch available after turning it off in the panel.
@@ -2416,7 +2428,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     record(enabled ? "Preview mode enabled" : "Preview mode disabled");
   };
-  void chrome.storage.local.get(enabledKey).then(values => {
+  void preferenceStorage.get(enabledKey).then(values => {
     if (!enabledPreferenceChanged) applyEnabledPreference(values[enabledKey]);
   }, () => {
     if (!enabledPreferenceChanged) applyEnabledPreference(true);
@@ -2456,10 +2468,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   playlistRetentionInput.onchange = () => {
     playlistRetentionPreferenceChanged = true;
     applyPlaylistRetentionCapacity(playlistRetentionInput.value);
-    void savePlaylistPreviewRetentionCapacity(chrome.storage.local, playlistPreviewRetentionCapacityKey,
+    void savePlaylistPreviewRetentionCapacity(preferenceStorage, playlistPreviewRetentionCapacityKey,
       playlistPreviewRetentionCapacity);
   };
-  void loadPlaylistPreviewRetentionCapacity(chrome.storage.local, playlistPreviewRetentionCapacityKey).then(
+  void loadPlaylistPreviewRetentionCapacity(preferenceStorage, playlistPreviewRetentionCapacityKey).then(
     value => { if (!playlistRetentionPreferenceChanged) applyPlaylistRetentionCapacity(value); },
     () => { if (!playlistRetentionPreferenceChanged) applyPlaylistRetentionCapacity(defaultPlaylistPreviewRetentionCapacity); },
   );
@@ -2474,10 +2486,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (!button || !playlistStageAttemptsControl.contains(button)) return;
     playlistStageRetryPreferenceChanged = true;
     applyPlaylistStageRetryLimit(Number(button.dataset.value) - 1);
-    void savePlaylistStageRetryLimit(chrome.storage.local, playlistStageRetryLimitKey, playlistStageRetryLimit);
+    void savePlaylistStageRetryLimit(preferenceStorage, playlistStageRetryLimitKey, playlistStageRetryLimit);
     record(`Playlist retry limit set to ${playlistStageRetryLimit} per stage`);
   });
-  void loadPlaylistStageRetryLimit(chrome.storage.local, playlistStageRetryLimitKey).then(
+  void loadPlaylistStageRetryLimit(preferenceStorage, playlistStageRetryLimitKey).then(
     value => { if (!playlistStageRetryPreferenceChanged) applyPlaylistStageRetryLimit(value); },
     () => { if (!playlistStageRetryPreferenceChanged) applyPlaylistStageRetryLimit(defaultPlaylistStageRetryLimit); },
   );
@@ -2502,14 +2514,14 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       playlistTimeoutPreferenceChanged = true;
       applyPlaylistBrokerTimeoutMultipliers({ ...playlistBrokerTimeoutMultipliers,
         [stage]: playlistBrokerTimeoutMultiplierForSeconds(stage, playlistTimeoutInputs[stage].value) });
-      void savePlaylistBrokerTimeoutMultipliers(chrome.storage.local, playlistBrokerTimeoutMultipliersKey,
+      void savePlaylistBrokerTimeoutMultipliers(preferenceStorage, playlistBrokerTimeoutMultipliersKey,
         playlistBrokerTimeoutMultipliers);
       record(`Playlist ${stage} timeout set to ${previewUiCopy(uiLanguage).seconds(
         playlistBrokerTimeoutSeconds(stage, playlistBrokerTimeoutMultipliers))}`);
     };
   }
   applyPlaylistBrokerTimeoutMultipliers(playlistBrokerTimeoutMultipliers);
-  void loadPlaylistBrokerTimeoutMultipliers(chrome.storage.local, playlistBrokerTimeoutMultipliersKey).then(
+  void loadPlaylistBrokerTimeoutMultipliers(preferenceStorage, playlistBrokerTimeoutMultipliersKey).then(
     value => { if (!playlistTimeoutPreferenceChanged) applyPlaylistBrokerTimeoutMultipliers(value); },
     () => { if (!playlistTimeoutPreferenceChanged) applyPlaylistBrokerTimeoutMultipliers(defaultPlaylistBrokerTimeoutMultipliers); },
   );
@@ -2522,7 +2534,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   }
   function togglePlaylistAutoplay() {
     applyPlaylistAutoplay(!playlistAutoplay);
-    void savePlaylistAutoplayPreference(chrome.storage.local, playlistAutoplayKey, playlistAutoplay);
+    void savePlaylistAutoplayPreference(preferenceStorage, playlistAutoplayKey, playlistAutoplay);
     record(`Playlist autoplay ${playlistAutoplay ? "enabled" : "disabled"}`);
   }
   let playlistAutoplayPreferenceChanged = false;
@@ -2530,7 +2542,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistAutoplayPreferenceChanged = true;
     previewSession.dispatch({ type: "control", action: "toggle-playlist-autoplay" });
   };
-  void loadPlaylistAutoplayPreference(chrome.storage.local, playlistAutoplayKey).then(
+  void loadPlaylistAutoplayPreference(preferenceStorage, playlistAutoplayKey).then(
     value => { if (!playlistAutoplayPreferenceChanged) applyPlaylistAutoplay(value); },
     () => { if (!playlistAutoplayPreferenceChanged) applyPlaylistAutoplay(defaultPlaylistAutoplayEnabled); },
   );
@@ -2543,15 +2555,15 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("debug-log-status").textContent = value
       ? previewUiCopy(uiLanguage).autoSaveLogsOn
       : previewUiCopy(uiLanguage).autoSaveLogsOff;
-    diagnosticSession.record(value ? "logging.auto-save-enabled" : "logging.auto-save-disabled", { version: prototypeVersion });
+    diagnosticSession.record(value ? "logging.auto-save-enabled" : "logging.auto-save-disabled", { version: playmiumVersion });
   }
   let logAutoSavePreferenceChanged = false;
   logAutoSaveInput.onchange = () => {
     logAutoSavePreferenceChanged = true;
     applyLogAutoSave(logAutoSaveInput.checked);
-    void savePreviewLogAutoSavePreference(chrome.storage.local, logAutoSaveKey, logAutoSaveInput.checked);
+    void savePreviewLogAutoSavePreference(preferenceStorage, logAutoSaveKey, logAutoSaveInput.checked);
   };
-  void loadPreviewLogAutoSavePreference(chrome.storage.local, logAutoSaveKey).then(
+  void loadPreviewLogAutoSavePreference(preferenceStorage, logAutoSaveKey).then(
     value => { if (!logAutoSavePreferenceChanged) applyLogAutoSave(value); },
     () => { if (!logAutoSavePreferenceChanged) applyLogAutoSave(defaultPreviewLogAutoSaveEnabled); },
   );
@@ -2611,7 +2623,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     previewStartupTimeoutValue.value = copy.seconds(previewStartupTimeoutSeconds);
     applySettingsChoice(previewStartupAttemptsControl, previewStartupAttempts);
     if (persist) {
-      void chrome.storage.local.set({
+      void preferenceStorage.set({
         [previewStartupTimeoutKey]: previewStartupTimeoutSeconds,
         [previewStartupAttemptsKey]: previewStartupAttempts,
       });
@@ -2634,7 +2646,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     applyPreviewStartupSettings(previewStartupTimeoutInput.value, settingsChoiceValue(previewStartupAttemptsControl), true);
   };
   previewStartupTimeoutInput.onchange = persistPreviewStartupSettings;
-  void chrome.storage.local.get([previewStartupTimeoutKey, previewStartupAttemptsKey]).then(values => {
+  void preferenceStorage.get([previewStartupTimeoutKey, previewStartupAttemptsKey]).then(values => {
     if (!previewStartupPreferenceChanged) applyPreviewStartupSettings(values[previewStartupTimeoutKey], values[previewStartupAttemptsKey]);
   }, () => {
     if (!previewStartupPreferenceChanged) applyPreviewStartupSettings(defaultPreviewStartupTimeoutSeconds, defaultPreviewStartupAttempts);
@@ -2658,7 +2670,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     applyLogAutoSave(defaultPreviewLogAutoSaveEnabled);
     applyPreviewStartupSettings(defaultPreviewStartupTimeoutSeconds, defaultPreviewStartupAttempts);
     restoreDefaultsButton.disabled = true;
-    void chrome.storage.local.set({
+    void preferenceStorage.set({
       [enabledKey]: true,
       [previewUrlSearchKey]: defaultPreviewUrlSearchEnabled,
       [playlistPreviewRetentionCapacityKey]: defaultPlaylistPreviewRetentionCapacity,
@@ -2848,12 +2860,12 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const url = URL.createObjectURL(new Blob([JSON.stringify(report, null, 2)], { type: "application/json" }));
     const link = document.createElement("a");
     link.href = url;
-    link.download = `inline-preview-v${prototypeVersion}-${report.session.id}.json`;
+    link.download = `inline-preview-v${playmiumVersion}-${report.session.id}.json`;
     link.click();
     setTimeout(() => URL.revokeObjectURL(url), 1000);
   };
   // Install early, before hover handlers. Pinning keeps the original player in
-  // place and suppresses pointer-leave teardown only during this experiment.
+  // place and suppresses pointer-leave teardown only during active playback.
   for (const name of ["blur", "visibilitychange"]) {
     window.addEventListener(name, event => {
       // A pinned video is explicitly selected for viewing. Prevent YouTube's

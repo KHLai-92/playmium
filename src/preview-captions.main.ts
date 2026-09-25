@@ -15,8 +15,8 @@ import { captionRequestEvent, captionResponseEvent, type CaptionState } from "./
   document.addEventListener(captionRequestEvent, event => {
     if (!previewPageSupported(location.pathname)) return;
     const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("skip-ads-preview-prototype-video")) return;
-    const host = video.closest(".skip-ads-preview-prototype-pinned");
+    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("playmium-preview-video")) return;
+    const host = video.closest(".playmium-preview-pinned");
     if (!host || !host.matches("ytd-video-preview, #inline-preview-player, #video-preview, [data-skip-preview-owned]")) return;
     const detail: unknown = (event as CustomEvent).detail;
     if (typeof detail !== "string" || detail.length > 2048) return;

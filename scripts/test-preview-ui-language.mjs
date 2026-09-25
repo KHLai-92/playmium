@@ -14,7 +14,7 @@ test("interface language defaults to English and persists Traditional Chinese", 
     async get(key) { return { [key]: values[key] }; },
     async set(next) { Object.assign(values, next); },
   };
-  const key = "skipAds.inlinePreviewPrototype.uiLanguage";
+  const key = "playmium.inlinePreview.uiLanguage";
   assert.equal(defaultPreviewUiLanguage, "en");
   assert.equal(normalizePreviewUiLanguage("unsupported"), "en");
   assert.equal(await loadPreviewUiLanguage(storage, key), "en");

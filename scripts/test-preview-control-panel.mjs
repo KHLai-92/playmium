@@ -2,10 +2,10 @@ import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
 import test from "node:test";
 
-const manifest = JSON.parse(await readFile("dist-preview-prototype/manifest.json", "utf8"));
-const controls = await readFile("dist-preview-prototype/preview.js", "utf8");
-const background = await readFile("dist-preview-prototype/preview-debug-log-background.js", "utf8");
-const source = await readFile("src/inline-preview.prototype.ts", "utf8");
+const manifest = JSON.parse(await readFile("dist-playmium/manifest.json", "utf8"));
+const controls = await readFile("dist-playmium/preview.js", "utf8");
+const background = await readFile("dist-playmium/preview-debug-log-background.js", "utf8");
+const source = await readFile("src/inline-preview.ts", "utf8");
 const uiLanguageSource = await readFile("src/preview-ui-language.ts", "utf8");
 const backgroundSource = await readFile("src/preview-debug-log.background.ts", "utf8");
 
@@ -52,12 +52,12 @@ test("Playmium controls use persistent compact choices and direct timeout second
   assert.equal(source.includes('class: "timeout-multiplier"'), false);
   assert.equal(source.includes('class: "timeout-seconds"'), false);
   assert.ok(source.includes('`${seconds} s`'));
-  assert.ok(source.includes("chrome.storage.local.set({ [enabledKey]: enabled })"));
-  assert.ok(source.includes("savePlaylistPreviewRetentionCapacity(chrome.storage.local"));
-  assert.ok(source.includes("savePlaylistStageRetryLimit(chrome.storage.local"));
-  assert.ok(source.includes("savePlaylistBrokerTimeoutMultipliers(chrome.storage.local"));
-  assert.ok(source.includes("savePlaylistAutoplayPreference(chrome.storage.local"));
-  assert.ok(source.includes("savePreviewLogAutoSavePreference(chrome.storage.local"));
+  assert.ok(source.includes("preferenceStorage.set({ [enabledKey]: enabled })"));
+  assert.ok(source.includes("savePlaylistPreviewRetentionCapacity(preferenceStorage"));
+  assert.ok(source.includes("savePlaylistStageRetryLimit(preferenceStorage"));
+  assert.ok(source.includes("savePlaylistBrokerTimeoutMultipliers(preferenceStorage"));
+  assert.ok(source.includes("savePlaylistAutoplayPreference(preferenceStorage"));
+  assert.ok(source.includes("savePreviewLogAutoSavePreference(preferenceStorage"));
   assert.ok(source.includes("[previewStartupTimeoutKey]: previewStartupTimeoutSeconds"));
   assert.ok(source.includes("[previewStartupAttemptsKey]: previewStartupAttempts"));
   assert.equal(source.includes("sessionStorage"), false);
@@ -66,9 +66,9 @@ test("Playmium controls use persistent compact choices and direct timeout second
 });
 
 test("native startup timeout does not control Playmium-added player startup", async () => {
-  const eventsSource = await readFile("src/preview-playback-experiment-events.ts", "utf8");
-  const adapterSource = await readFile("src/preview-playback-adapter.experiment.ts", "utf8");
-  const playbackSource = await readFile("src/preview-playback.experiment.ts", "utf8");
+  const eventsSource = await readFile("src/preview-playback-events.ts", "utf8");
+  const adapterSource = await readFile("src/preview-playback-adapter.ts", "utf8");
+  const playbackSource = await readFile("src/preview-playback.ts", "utf8");
   assert.equal(eventsSource.includes("timeoutMs: number"), false);
   assert.equal(adapterSource.includes("r.timeoutMs"), false);
   assert.equal(source.includes("timeoutMs: Math.min(15000, Math.max(2000, previewStartupTimeoutSeconds * 1000))"), false);
@@ -173,8 +173,8 @@ test("reference control panel keeps equal tab dimensions and contained text-trig
 test("interface language selection is persistent and updates English and Traditional Chinese copy", () => {
   assert.ok(controls.includes("Interface language"));
   assert.ok(uiLanguageSource.includes('traditionalChinese: "繁體中文"'));
-  assert.ok(source.includes("loadPreviewUiLanguage(chrome.storage.local, uiLanguageKey)"));
-  assert.ok(source.includes("savePreviewUiLanguage(chrome.storage.local, uiLanguageKey, uiLanguage)"));
+  assert.ok(source.includes("loadPreviewUiLanguage(preferenceStorage, uiLanguageKey)"));
+  assert.ok(source.includes("savePreviewUiLanguage(preferenceStorage, uiLanguageKey, uiLanguage)"));
   assert.ok(source.includes("applyUiLanguage(uiLanguageSelect.value)"));
   assert.ok(uiLanguageSource.includes('closeControlPanel: "關閉控制面板"'));
   assert.ok(uiLanguageSource.includes('closeAdvancedSettings: "關閉進階設定"'));

@@ -5,7 +5,7 @@
   "author": "KHLai-92 <294032626+KHLai-92@users.noreply.github.com>",
   "type": "module",
   "scripts": {
-    "build": "node scripts/build-preview-prototype.mjs",
+    "build": "node scripts/build-preview.mjs",
     "typecheck": "tsc --noEmit",
     "test": "npm run build && node scripts/test-preview.mjs"
   },

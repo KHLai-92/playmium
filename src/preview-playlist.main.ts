@@ -4,7 +4,7 @@ import { bindPlaylistSource, extractPlaylist, isPlaybackTroubleNotification,
   playlistPrefetchEvent, playlistRequestEvent, playlistPrefetchCancelEvent, playlistPreviewRetentionEvent, playlistResponseEvent,
   playlistFirstVideoRequestEvent, playlistFirstVideoResponseEvent, playlistSelectEvent, playlistSelectPhaseEvent, playlistWarmEvent, type PreviewPlaylist,
   type PlaylistPreviewTrigger, type PreviewPlaylistSeed, validatedPlaylistPlayerResponse } from "./preview-playlist";
-import { cancelPreviewPreparation, preparePreview, previewVideo, setPreviewRetentionCapacity } from "./preview-playback.experiment";
+import { cancelPreviewPreparation, preparePreview, previewVideo, setPreviewRetentionCapacity } from "./preview-playback";
 import { loadPlaylistFirstVideoId, loadWatchPage } from "./preview-watch-data.main";
 import { qualityLabels } from "./preview-quality";
 import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-catalog";
@@ -38,7 +38,7 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
       if (renderer.isConnected && isPlaybackTroubleNotification(renderer.data)) renderer.remove();
     };
     const troubleObserver = new MutationObserver(records => {
-      if (!document.querySelector("video.skip-ads-preview-prototype-video[data-skip-preview-playlist-request]")) return;
+      if (!document.querySelector("video.playmium-preview-video[data-skip-preview-playlist-request]")) return;
       const renderers = new Set<HTMLElement & { data?: unknown }>();
       for (const record of records) for (const added of record.addedNodes) {
         if (!(added instanceof Element)) continue;
@@ -55,7 +55,7 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
     troubleObserver.observe(document, { childList: true, subtree: true });
   }
   function context(video: HTMLVideoElement) {
-    const host = video.closest(".skip-ads-preview-prototype-pinned");
+    const host = video.closest(".playmium-preview-pinned");
     const href = host?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
     if (!host || !href) return null;
     const url = new URL(href);
@@ -115,7 +115,7 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
   }, true);
   document.addEventListener(playlistRequestEvent, event => {
     const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("skip-ads-preview-prototype-video")) return;
+    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("playmium-preview-video")) return;
     const active = context(video);
     if (!active) return;
     const detail = (event as CustomEvent).detail;
@@ -187,7 +187,7 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
   }, true);
   document.addEventListener(playlistSelectEvent, event => {
     const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("skip-ads-preview-prototype-video")) return;
+    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("playmium-preview-video")) return;
     const choices = allowed.get(video);
     if (!choices || !choices.host.contains(video)) return;
     const detail = (event as CustomEvent).detail;

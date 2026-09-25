@@ -52,7 +52,7 @@ node scripts/test-preview.mjs --node-only
 The unpacked extension is generated in:
 
 ```text
-dist-preview-prototype
+dist-playmium
 ```
 
 To load it manually:
@@ -60,7 +60,7 @@ To load it manually:
 1. Open `chrome://extensions`
 2. Enable **Developer mode**
 3. Click **Load unpacked**
-4. Select `dist-preview-prototype`
+4. Select `dist-playmium`
 5. Reload YouTube
 
 ## Debug logging

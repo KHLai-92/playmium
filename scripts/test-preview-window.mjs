@@ -31,7 +31,7 @@ test("1080p wins over higher resolutions; otherwise highest available wins regar
 
 // These two source assertions intentionally remain: the emitted CSS is the
 // browser artifact under test, not a private TypeScript implementation detail.
-const compiled = await readFile("dist-preview-prototype/preview.js", "utf8");
+const compiled = await readFile("dist-playmium/preview.js", "utf8");
 test("fullscreen removes the floating frame, outline and shadow", () => {
   const selector = ".${hostClass}:fullscreen{";
   const at = compiled.indexOf(selector), start = at + selector.length;
@@ -42,7 +42,7 @@ test("fullscreen removes the floating frame, outline and shadow", () => {
 });
 
 test("fullscreen removes the focus outline from the full-size controls panel", () => {
-  const selector = ".${hostClass}:fullscreen #skip-ads-preview-prototype{";
+  const selector = ".${hostClass}:fullscreen #playmium-preview{";
   const at = compiled.indexOf(selector), start = at + selector.length;
   const rule = at < 0 ? "" : compiled.slice(start, compiled.indexOf("}", start));
   assert.match(rule, /outline:none!important/);

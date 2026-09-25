@@ -1,4 +1,4 @@
-export const previewUrlSearchKey = "skipAds.inlinePreviewPrototype.urlSearchEnabled";
+export const previewUrlSearchKey = "playmium.inlinePreview.urlSearchEnabled";
 export const previewSearchModeEvent = "skip-ads-preview-search-mode";
 export const defaultPreviewUrlSearchEnabled = true;
 

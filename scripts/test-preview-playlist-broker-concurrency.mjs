@@ -49,7 +49,7 @@ test("clicked preparation preempts hover work and retries with one connected fra
     const installed = top.installPlaylistTopBroker();
     const makeVideo = () => Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
     const videoA = makeVideo();
     const videoB = makeVideo();
@@ -228,7 +228,7 @@ test("a new playlist intent cancels old preparation and ignores its late respons
     installed = top.installPlaylistTopBroker();
     const makeVideo = () => Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
     const videoA = makeVideo();
     const videoB = makeVideo();
@@ -339,7 +339,7 @@ test("selected renderer-ready stall rewakes the resident frame without another c
     installed = top.installPlaylistTopBroker();
     const video = Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
     const videoId = "vid00000007";
     const pending = top.primePlaylistPreviewResponse(video, videoId, { left: 10, top: 10, width: 100, height: 60 });
@@ -461,7 +461,7 @@ test("rapid playlist selections reuse one heavyweight broker document", async ()
     installed = top.installPlaylistTopBroker();
     const makeVideo = () => Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
 
     for (let index = 0; index < 12; index++) {

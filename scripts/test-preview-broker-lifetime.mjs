@@ -27,7 +27,7 @@ async function topFixture(run, search = "") {
     broker = await import(`data:text/javascript;base64,${Buffer.from(bundle.outputFiles[0].text).toString("base64")}#${Math.random()}`);
     broker.installPlaylistTopBroker();
     const target = () => Object.assign(new EventTarget(), { isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" } });
+      classList: { contains: name => name === "playmium-preview-video" } });
     const initial = () => {
       const url = new URL(frames.at(-1).src, location.origin);
       return { channel: "skip-ads-preview-playlist-broker", requestId: url.searchParams.get("skip_inline_preview_broker"),

@@ -41,7 +41,7 @@ test("playlist retry limit is bounded and persists across reloads", async () => 
     async get(key) { return { [key]: values[key] }; },
     async set(next) { Object.assign(values, next); },
   };
-  const key = "skipAds.inlinePreviewPrototype.playlistStageRetryLimit";
+  const key = "playmium.inlinePreview.playlistStageRetryLimit";
   assert.equal(defaultPlaylistStageRetryLimit, 2);
   assert.equal(await loadPlaylistStageRetryLimit(storage, key), defaultPlaylistStageRetryLimit);
   assert.equal(normalizePlaylistStageRetryLimit(-1), 0);
@@ -94,7 +94,7 @@ test("broker timeouts use compact stage-specific seconds ranges while preserving
     async get(key) { return { [key]: values[key] }; },
     async set(next) { Object.assign(values, next); },
   };
-  const key = "skipAds.inlinePreviewPrototype.playlistBrokerTimeoutMultipliers";
+  const key = "playmium.inlinePreview.playlistBrokerTimeoutMultipliers";
   assert.deepEqual(await loadPlaylistBrokerTimeoutMultipliers(storage, key), defaultPlaylistBrokerTimeoutMultipliers);
   const chosen = { starting: .75, ready: 1.5, request: 2.25 };
   await savePlaylistBrokerTimeoutMultipliers(storage, key, chosen);
@@ -107,7 +107,7 @@ test("playlist autoplay preference persists and advances without wrapping", asyn
     async get(key) { return { [key]: values[key] }; },
     async set(next) { Object.assign(values, next); },
   };
-  const key = "skipAds.inlinePreviewPrototype.playlistAutoplay";
+  const key = "playmium.inlinePreview.playlistAutoplay";
   assert.equal(await loadPlaylistAutoplayPreference(storage, key), true);
   await savePlaylistAutoplayPreference(storage, key, true);
   assert.equal(await loadPlaylistAutoplayPreference(storage, key), true);

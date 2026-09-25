@@ -7,8 +7,8 @@ import { loadWatchPage } from './preview-watch-data.main';
   const cache = new Map<string, Promise<ReturnType<typeof extractChapters>>>();
   document.addEventListener(metadataRequestEvent, event => {
     const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains('skip-ads-preview-prototype-video') || !previewPageSupported(location.pathname)) return;
-    const host = video.closest('.skip-ads-preview-prototype-pinned');
+    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains('playmium-preview-video') || !previewPageSupported(location.pathname)) return;
+    const host = video.closest('.playmium-preview-pinned');
     const href = host?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
     if (!host || !href) return;
     const url = new URL(href);
@@ -29,7 +29,7 @@ import { loadWatchPage } from './preview-watch-data.main';
       cache.delete(videoId); respond({ videoId, source, chapters: [], error: 'Chapter information could not be loaded. Try again.' });
     });
     const respond = (state: PreviewMetadata) => {
-      if (video.isConnected && video.classList.contains('skip-ads-preview-prototype-video') && video.currentSrc === source && host?.contains(video)) {
+      if (video.isConnected && video.classList.contains('playmium-preview-video') && video.currentSrc === source && host?.contains(video)) {
         video.dispatchEvent(new CustomEvent(metadataResponseEvent, { detail: JSON.stringify(state) }));
       }
     }

@@ -3,7 +3,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import test from "node:test";
 
-const compiled = await readFile("dist-preview-prototype/preview-main.js", "utf8");
+const compiled = await readFile("dist-playmium/preview-main.js", "utf8");
 function scenario({ enabled = true, available = true, toggle = true } = {}) {
   const calls = [];
   const tracks = [{ languageCode: 'zh-TW', vssId: '.zh-TW', displayName: 'Chinese (Traditional)' },

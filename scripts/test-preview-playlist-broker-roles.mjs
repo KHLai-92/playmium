@@ -114,7 +114,7 @@ test("playlist broker keeps one renderer and retains exactly one completed respo
       const videoId = `vid${String(index).padStart(8, "0")}`;
       const video = Object.assign(new EventTarget(), {
         isConnected: true,
-        classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+        classList: { contains: name => name === "playmium-preview-video" },
       });
       const observed = [];
       video.addEventListener("skip-ads-preview-playlist-warm-phase", event => observed.push(JSON.parse(event.detail).phase));
@@ -242,7 +242,7 @@ test("playlist broker retry refreshes a renderer that failed the same video", as
     const videoId = "failed00001";
     const video = Object.assign(new EventTarget(), {
       isConnected: true,
-      classList: { contains: name => name === "skip-ads-preview-prototype-video" },
+      classList: { contains: name => name === "playmium-preview-video" },
     });
     const phases = [];
     video.addEventListener("skip-ads-preview-playlist-warm-phase", event => phases.push(JSON.parse(event.detail).phase));

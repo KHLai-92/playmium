@@ -1,7 +1,7 @@
 /** Event authorization/presentation adapter. All playback lives in previewVideo. */
 import { sharedPreviewPrepareEvent, sharedPreviewCancelEvent, sharedPreviewStartEvent, sharedPreviewResultEvent,
-  type SharedPreviewRequest } from "./preview-playback-experiment-events";
-import { preparePreview, previewVideo, cancelPreviewPreparation, stopPreview } from "./preview-playback.experiment";
+  type SharedPreviewRequest } from "./preview-playback-events";
+import { preparePreview, previewVideo, cancelPreviewPreparation, stopPreview } from "./preview-playback";
 import { previewPlaybackSupport, resolvePreviewHost, resolvePreviewThumbnail } from "./preview-entry";
 import { playlistPreviewWarmPhaseEvent } from "./preview-playlist";
 
@@ -12,7 +12,7 @@ function valid(value: unknown): value is SharedPreviewRequest {
     (r.actionId === undefined || typeof r.actionId === "string" && r.actionId.length > 0 && r.actionId.length <= 100) &&
     (r.retryLimit === undefined || Number.isInteger(r.retryLimit) && r.retryLimit >= 0 && r.retryLimit <= 2);
 }
-export function installSharedPreviewExperiment() {
+export function installSharedPreview() {
   if (window !== window.top) return;
   const requests = new WeakMap<HTMLElement, AbortController>();
   document.addEventListener(sharedPreviewPrepareEvent, event => {
@@ -53,7 +53,7 @@ export function installSharedPreviewExperiment() {
     void previewVideo(host, { ...request, actionId: request.actionId ?? request.requestId }, {
       signal: controller.signal, onPhase(phase) {
         if (phase.phase === "commit") {
-          const video = host.querySelector<HTMLVideoElement>("video.skip-ads-preview-prototype-video");
+          const video = host.querySelector<HTMLVideoElement>("video.playmium-preview-video");
           if (video) video.dataset.skipPreviewPlaylistRequest = request.requestId;
         }
         // Stable playlist playback presents the first frame before quality

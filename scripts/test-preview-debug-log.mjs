@@ -195,18 +195,18 @@ test("debug log store bounds each version file and keeps the newest complete ent
 
 test("built manifest, runtime diagnostics and log filename share package version", async () => {
   const packageJson = JSON.parse(await readFile("package.json", "utf8"));
-  const build = await readFile("scripts/build-preview-prototype.mjs", "utf8");
-  const runtime = await readFile("src/inline-preview.prototype.ts", "utf8");
+  const build = await readFile("scripts/build-preview.mjs", "utf8");
+  const runtime = await readFile("src/inline-preview.ts", "utf8");
   assert.match(build, /readFile\("package\.json"/);
   assert.match(build, /define: \{ __INLINE_PREVIEW_VERSION__/);
-  assert.match(runtime, /prototypeVersion = previewDebugLogVersion/);
+  assert.match(runtime, /playmiumVersion = previewDebugLogVersion/);
   assert.equal(previewDebugLogFileName(packageJson.version), `inline-preview-v${packageJson.version}.jsonl`);
 });
 
 test("debug coverage includes preview phases, resource lifetimes, and summarized interaction state", async () => {
-  const runtime = await readFile("src/inline-preview.prototype.ts", "utf8");
+  const runtime = await readFile("src/inline-preview.ts", "utf8");
   const catalog = await readFile("src/preview-playlist-catalog.ts", "utf8");
-  const playlistMain = `${await readFile("src/preview-playlist.main.ts", "utf8")}\n${await readFile("src/preview-playback.experiment.ts", "utf8")}`;
+  const playlistMain = `${await readFile("src/preview-playlist.main.ts", "utf8")}\n${await readFile("src/preview-playback.ts", "utf8")}`;
   const brokerTop = await readFile("src/preview-playlist-broker-top.main.ts", "utf8");
   const brokerFrame = await readFile("src/preview-playlist-broker-frame.main.ts", "utf8");
   for (const event of ["preview.hover", "preview.preparing", "preview.ready", "preview.click", "preview.start-play"]) {

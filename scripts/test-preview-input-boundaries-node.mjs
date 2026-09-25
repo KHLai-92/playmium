@@ -6,7 +6,7 @@ import { transform } from "esbuild";
 import { nextPlaylistAutoplayVideoId, playlistAutoplayPreparation } from "../src/preview-playlist.ts";
 
 test("production wheel handling preserves overlay scrolling and consumes its boundaries", async () => {
-  const source = (await readFile("src/inline-preview.prototype.ts", "utf8")).replace(/\r\n/g, "\n");
+  const source = (await readFile("src/inline-preview.ts", "utf8")).replace(/\r\n/g, "\n");
   const start = source.indexOf('  window.addEventListener("wheel", event => {\n    const activeHost');
   assert.ok(start >= 0);
   const end = source.indexOf('  for (const name of ["touchstart", "touchmove"])', start);
@@ -49,7 +49,7 @@ test("production wheel handling preserves overlay scrolling and consumes its bou
 });
 
 test("production autoplay reuses a ready action and cancels only unfinished next-video preparation", async () => {
-  const source = (await readFile("src/inline-preview.prototype.ts", "utf8")).replace(/\r\n/g, "\n");
+  const source = (await readFile("src/inline-preview.ts", "utf8")).replace(/\r\n/g, "\n");
   const start = source.indexOf("  function queuePlaylistAutoplay()");
   const end = source.indexOf('  window.addEventListener("ended"', start);
   assert.ok(start >= 0 && end > start);

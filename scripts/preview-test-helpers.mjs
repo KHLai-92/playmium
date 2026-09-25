@@ -1,6 +1,6 @@
-// Shared user gestures for the standalone prototype's 0.0.8 entry flow.
+// Shared user gestures for the extension's entry flow.
 export async function openPreviewPanel(page) {
-  const panel = page.locator("#skip-ads-preview-prototype");
+  const panel = page.locator("#playmium-preview");
   await panel.waitFor({ state: "attached" });
   if (!(await panel.locator("#controls").isVisible())) await page.keyboard.press("Alt+p");
   return panel;
@@ -15,11 +15,11 @@ export async function clickPlayingPreview(page) {
   const box = await video.boundingBox();
   if (!box) throw new Error("The real inline preview has no visible video bounds");
   await page.mouse.click(box.x + box.width * 0.4, box.y + box.height * 0.4);
-  await page.waitForSelector(".skip-ads-preview-prototype-video", { state: "attached", timeout: 5000 });
+  await page.waitForSelector(".playmium-preview-video", { state: "attached", timeout: 5000 });
 }
 export async function samplePreviewAudio(page) {
   return page.evaluate(async () => {
-    const video = document.querySelector(".skip-ads-preview-prototype-video");
+    const video = document.querySelector(".playmium-preview-video");
     const stream = video.captureStream(), tracks = stream.getAudioTracks();
     if (!tracks.length) return { tracks: 0, peak: 0 };
     const context = new AudioContext(); await context.resume();

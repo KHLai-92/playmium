@@ -5,7 +5,7 @@ import { readFile } from "node:fs/promises";
 import vm from "node:vm";
 import test from "node:test";
 
-const compiled = await readFile("dist-preview-prototype/preview-main.js", "utf8");
+const compiled = await readFile("dist-playmium/preview-main.js", "utf8");
 function setup() {
   const listeners = new Map();
   class Video extends EventTarget {}

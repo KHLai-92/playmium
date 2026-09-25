@@ -7,8 +7,8 @@ import { loadWatchPage } from './preview-watch-data.main';
   const access = new WeakMap<HTMLVideoElement, { videoId: string; tokens: Set<string> }>();
   document.addEventListener(infoRequestEvent, event => {
     const video = event.target;
-    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains('skip-ads-preview-prototype-video') || !previewPageSupported(location.pathname)) return;
-    const host = video.closest('.skip-ads-preview-prototype-pinned');
+    if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains('playmium-preview-video') || !previewPageSupported(location.pathname)) return;
+    const host = video.closest('.playmium-preview-pinned');
     const identity = () => {
       const href = host?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
       if (!href) return '';
@@ -48,7 +48,7 @@ import { loadWatchPage } from './preview-watch-data.main';
         }
       }
     })().catch(error => { result.error = error instanceof Error ? error.message : 'Video information could not be loaded.'; }).finally(() => {
-      if (video.isConnected && video.classList.contains('skip-ads-preview-prototype-video') && host.contains(video) && identity() === videoId) {
+      if (video.isConnected && video.classList.contains('playmium-preview-video') && host.contains(video) && identity() === videoId) {
         video.dispatchEvent(new CustomEvent(infoResponseEvent, { detail: JSON.stringify(result) }));
       }
     });

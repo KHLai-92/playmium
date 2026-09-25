@@ -305,7 +305,7 @@ function prioritize(session: PendingBroker) {
 }
 function start(session: PendingBroker) {
   const video = session.video.deref();
-  if (!video?.isConnected || !(video.classList.contains("skip-ads-preview-prototype-video") || video.hasAttribute?.("data-skip-preview-owned") ||
+  if (!video?.isConnected || !(video.classList.contains("playmium-preview-video") || video.hasAttribute?.("data-skip-preview-owned") ||
       session.surface === "thumbnail" && resolvePreviewThumbnail(video, location.href)?.videoId === session.videoId)) {
     session.reject(new Error("The preview session ended before this item was prepared."));
     phase(session, "error", "Preview session ended.");

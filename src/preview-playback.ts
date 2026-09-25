@@ -1,8 +1,7 @@
 import { createPlaylistPlaybackRestorer } from "./preview-playlist-playback";
-/** EXPERIMENT: one complete non-native preview interface for playlist and
- * thumbnail callers. Start from 72bfe80's playback rules; do not tune broker
- * scheduling to make the experiment pass. No player means create an extension
- * player, never lease a global YouTube hover player into a second lifetime. */
+/** Shared playback for playlist items and other Playmium-added previews.
+ * When no suitable player exists, create an extension-owned player rather
+ * than reusing YouTube's global hover player for a second lifetime. */
 import { cancelPlaylistPreviewResponse, playlistPreviewResponse, primePlaylistPreviewResponse,
   releasePlaylistPreviewResponse, setPlaylistPreviewRetentionCapacity } from "./preview-playlist-broker-top.main";
 import { playlistAudioChangeEvent, validatedPlaylistPlayerResponse,
@@ -95,7 +94,7 @@ export async function previewVideo(host: HTMLElement, request: PreviewPlaybackRe
   const cancel = () => controller.abort(options.signal?.reason ?? new DOMException("Preview closed.", "AbortError"));
   options.signal?.addEventListener("abort", cancel, { once: true });
   if (options.signal?.aborted) cancel();
-  let video = host.querySelector<HTMLVideoElement>("video.skip-ads-preview-prototype-video");
+  let video = host.querySelector<HTMLVideoElement>("video.playmium-preview-video");
   let player = video ? playerFor(video, host) : null;
   const existingPlayer = !!video && !!player;
   const previousSource = video?.currentSrc ?? "";
