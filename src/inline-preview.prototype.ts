@@ -921,8 +921,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playmiumTab.textContent = copy.playmium;
     element("preview-mode-label").textContent = copy.inlineVideoPreviews;
     element("enable").setAttribute("aria-label", copy.inlineVideoPreviews);
-    element("enable").setAttribute("aria-description", copy.inlineVideoPreviewsHelp);
-    previewModeCard.title = copy.inlineVideoPreviewsHelp;
     element("ui-language-label").textContent = copy.interfaceLanguage;
     uiLanguageSelect.setAttribute("aria-label", copy.interfaceLanguage);
     uiLanguageSelect.options[0].textContent = copy.english;
@@ -941,8 +939,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("playlist-previews-heading").textContent = copy.playlistPreviews;
     element("playlist-retention-label").textContent = copy.playlistPreviewsKeptReady;
     playlistRetentionInput.setAttribute("aria-label", copy.playlistPreviewsKeptReady);
-    playlistRetentionInput.setAttribute("aria-description", copy.playlistPreviewsKeptReadyHelp);
-    playlistRetentionRow.title = copy.playlistPreviewsKeptReadyHelp;
     element("playlist-retries-label").textContent = copy.retriesPerLoadingStep;
     applySettingsTooltipCopy(element("playlist-retries-label"), copy.retriesPerLoadingStepHelp);
     playlistStageRetryLimitInput.setAttribute("aria-label", copy.retriesPerLoadingStep);

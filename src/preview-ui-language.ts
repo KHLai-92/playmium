@@ -9,7 +9,6 @@ export type PreviewUiCopy = Readonly<{
   youtube: string;
   playmium: string;
   inlineVideoPreviews: string;
-  inlineVideoPreviewsHelp: string;
   interfaceLanguage: string;
   english: string;
   traditionalChinese: string;
@@ -26,7 +25,6 @@ export type PreviewUiCopy = Readonly<{
   previewStartupAttemptsHelp: string;
   playlistPreviews: string;
   playlistPreviewsKeptReady: string;
-  playlistPreviewsKeptReadyHelp: string;
   retriesPerLoadingStep: string;
   retriesPerLoadingStepHelp: string;
   playlistLoadingTimeouts: string;
@@ -178,7 +176,6 @@ const english: PreviewUiCopy = {
   youtube: "YouTube",
   playmium: "Playmium",
   inlineVideoPreviews: "Enable previews",
-  inlineVideoPreviewsHelp: "Play videos without leaving the current YouTube page. Turning this off closes the current preview and restores normal YouTube links.",
   interfaceLanguage: "Interface language",
   english: "English",
   traditionalChinese: "繁體中文",
@@ -195,7 +192,6 @@ const english: PreviewUiCopy = {
   previewStartupAttemptsHelp: "Limits how many times Playmium tries to start a preview.",
   playlistPreviews: "Playlist previews",
   playlistPreviewsKeptReady: "Previews kept ready",
-  playlistPreviewsKeptReadyHelp: "Keeps 1–3 recently prepared playlist previews ready for 30 seconds so a later click can start faster.",
   retriesPerLoadingStep: "Max attempts/step",
   retriesPerLoadingStepHelp: "Applies this limit to each step below.",
   playlistLoadingTimeouts: "Playlist loading timeouts",
@@ -347,7 +343,6 @@ const traditionalChinese: PreviewUiCopy = {
   youtube: "YouTube 播放",
   playmium: "Playmium 設定",
   inlineVideoPreviews: "啟用預覽",
-  inlineVideoPreviewsHelp: "不離開目前的 YouTube 頁面即可播放影片。關閉後會結束目前的預覽，YouTube 連結也會恢復一般開啟方式。",
   interfaceLanguage: "介面語言",
   english: "English",
   traditionalChinese: "繁體中文",
@@ -364,7 +359,6 @@ const traditionalChinese: PreviewUiCopy = {
   previewStartupAttemptsHelp: "限制 Playmium 啟動預覽的嘗試次數。",
   playlistPreviews: "播放清單預覽",
   playlistPreviewsKeptReady: "保留待播預覽",
-  playlistPreviewsKeptReadyHelp: "保留最近準備完成的 1–3 個播放清單預覽 30 秒，之後點擊時可更快開始。",
   retriesPerLoadingStep: "每步最多嘗試次數",
   retriesPerLoadingStepHelp: "此上限分別套用到下方每個步驟。",
   playlistLoadingTimeouts: "播放清單載入逾時",

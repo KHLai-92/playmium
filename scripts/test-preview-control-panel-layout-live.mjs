@@ -43,6 +43,10 @@ try {
   const retentionBox = await page.locator("#playlist-retention-capacity-trigger").boundingBox();
   const languageBox = await page.locator("#ui-language-trigger").boundingBox();
   assert.ok(playmiumControlsBox && retentionBox && languageBox, "Playmium controls must be measurable");
+  assert.equal(await page.locator("#playmium-main > .preview-mode-card[title], #enable[aria-description]").count(), 0,
+    "the main preview toggle must not expose a tooltip");
+  assert.equal(await page.locator("#playmium-main > .row[title], #playlist-retention-capacity[aria-description], #playlist-retention-capacity-trigger[aria-description]").count(), 0,
+    "the main retention control must not expose a tooltip");
   const playmiumOverflow = await page.locator("#controls").evaluate(element => element.scrollHeight - element.clientHeight);
   assert.ok(playmiumOverflow <= 1, "collapsed Playmium controls should fit the YouTube-sized panel without scrolling");
   assert.ok(Math.abs(retentionBox.width - languageBox.width) <= 2,
