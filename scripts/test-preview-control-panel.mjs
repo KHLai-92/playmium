@@ -30,14 +30,16 @@ test("extension action opens Playmium while the in-player gear opens YouTube", (
   assert.ok(source.includes('openControlPanel("playmium")'));
 });
 
-test("Playmium controls use persistent sliders and show multiplier plus actual timeout", () => {
+test("Playmium controls use persistent inputs and show multiplier plus actual timeout", () => {
   assert.ok(controls.includes("Autoplay next playlist video: Off"));
   assert.ok(controls.includes("Retries per loading step"));
+  assert.ok(source.includes('node("select", { id: "playlist-retention-capacity"'));
+  assert.equal(source.includes('id: "playlist-retention-capacity", type: "range"'), false);
   assert.ok(source.includes('id: "preview-startup-attempts", type: "range"'));
   assert.ok(source.includes('id: "playlist-stage-retry-limit", type: "range"'));
-  assert.ok(source.includes('playlistTimeoutRow("starting", "Prepare preview", "Prepare playlist preview timeout")'));
-  assert.ok(source.includes('playlistTimeoutRow("ready", "Start player", "Start playlist player timeout")'));
-  assert.ok(source.includes('playlistTimeoutRow("request", "Load video", "Load playlist video timeout")'));
+  assert.ok(source.includes('playlistTimeoutRow("starting", "Prepare preview timeout", "Prepare preview timeout")'));
+  assert.ok(source.includes('playlistTimeoutRow("ready", "Start player timeout", "Start player timeout")'));
+  assert.ok(source.includes('playlistTimeoutRow("request", "Load video timeout", "Load video timeout")'));
   assert.ok(source.includes('class: "timeout-multiplier"'));
   assert.ok(source.includes('class: "timeout-seconds"'));
   assert.ok(source.includes('class: "playlist-timeout-output"'));
@@ -88,10 +90,35 @@ test("Playmium exposes a persistent restore-all-defaults action", () => {
 test("troubleshooting presents independent auto-save and current-log download controls", () => {
   assert.ok(source.includes('"Auto-save logs"'));
   assert.ok(source.includes('"Download current log"'));
+  assert.ok(source.includes('id: "troubleshooting"'));
+  assert.ok(source.includes('class: "troubleshooting-toggle"'));
+  assert.ok(source.includes('id: "playmium-actions"'));
+  assert.ok(source.includes('#troubleshooting #export{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px'));
   assert.ok(source.includes("diagnosticSession.setAutoSave(value)"));
   assert.ok(source.includes("const report = diagnosticSession.exportCurrent()"));
   assert.doesNotMatch(source, /element\("export"\)\.onclick[\s\S]{0,800}applyLogAutoSave/,
     "manual download must not change the auto-save switch");
+});
+
+test("reference control panel keeps equal tab dimensions and responsive advanced settings without help chrome", () => {
+  assert.ok(source.includes('id: "advanced-settings-open"'));
+  assert.ok(source.includes('"aria-expanded": "false", "aria-controls": "advanced-settings"'));
+  assert.ok(source.includes('id: "advanced-settings", role: "dialog"'));
+  assert.ok(source.includes("setAdvancedSettingsOpen(false, true)"));
+  assert.ok(source.includes("#advanced-settings .settings-group>.row>label{display:grid"));
+  assert.ok(source.includes("@container(min-width:1160px){#advanced-settings{right:468px}}"));
+  assert.ok(source.includes("width:min(680px,calc(100% - 24px))"));
+  assert.ok(source.includes("#advanced-settings-header + .settings-group{border-top:0"));
+  assert.ok(source.includes("#advanced-settings-close{display:grid;place-items:center;width:34px;height:34px;padding:0;background:transparent;border:0"));
+  assert.ok(source.includes("#controls{width:440px;height:326px}"));
+  assert.ok(source.includes("#controls:has(#playmium-panel:not([hidden]) #troubleshooting[open]){height:auto;min-height:326px}"));
+  assert.ok(source.includes("#playmium-actions{display:grid"));
+  assert.ok(source.includes(".panel-nav-button{width:100%;min-height:35px"));
+  assert.ok(source.includes('class: "toggle-switch"'));
+  assert.equal(source.includes("quick-help-toggle"), false);
+  assert.equal(source.includes("panel-nav-chevron"), false);
+  assert.equal(source.includes("#controls{width:360px"), false);
+  assert.equal(uiLanguageSource.includes("quickHelpTitle"), false);
 });
 
 test("interface language selection is persistent and updates English and Traditional Chinese copy", () => {

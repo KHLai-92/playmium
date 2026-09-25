@@ -252,15 +252,12 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     small{color:#bcc6d3} [hidden]{display:none!important}
     .enable-row{display:flex;align-items:center;justify-content:space-between;margin:12px 0 4px;gap:12px}
     .preview-toggle{display:inline-flex;align-items:center;padding:3px;border:0;background:transparent;gap:8px}
-    .toggle-pill{display:flex;align-items:center;justify-content:space-between;width:44px;height:26px;border-radius:14px;background:#555b5e;overflow:hidden;transition:background .28s}
-    .toggle-label{width:26px;flex:0 0 26px;font:800 9px/1 Arial;text-align:center;letter-spacing:-.04em}
-    .toggle-icon{width:18px;flex:0 0 18px;text-align:center;font-size:13px}
-    .toggle-label,.toggle-icon{color:#fff;transition:transform .28s cubic-bezier(.2,.8,.2,1)}
-    .preview-toggle[aria-checked=true] .toggle-pill{background:#bbf7d0;box-shadow:0 0 0 1px #86efac inset}
-    .preview-toggle[aria-checked=true] .toggle-label,.preview-toggle[aria-checked=true] .toggle-icon{color:#071b18}
-    .preview-toggle[aria-checked=false] .toggle-label{transform:translateX(18px)}
-    .preview-toggle[aria-checked=false] .toggle-icon{transform:translateX(-26px)}
-    #enabled-state{width:24px;text-align:left}
+    .toggle-switch{position:relative;width:44px;height:24px;flex:0 0 44px;border:1px solid #ffffff2b;border-radius:13px;background:#3a4553;transition:background .18s,border-color .18s}
+    .toggle-knob{position:absolute;left:3px;top:3px;width:16px;height:16px;border-radius:50%;background:#dce5ee;box-shadow:0 1px 4px #0008;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+    .preview-toggle[aria-checked=true] .toggle-switch{background:#22b8c6;border-color:#4dd9e3}
+    .preview-toggle[aria-checked=true] .toggle-knob{transform:translateX(20px);background:#fff}
+    #enabled-state{min-width:24px;text-align:left;color:#9ca9b8}
+    .preview-toggle[aria-checked=true] #enabled-state{color:#67d9e5}
     .sound-control{display:inline-flex;align-items:center;gap:4px;padding:0 12px 0 2px;border-radius:24px;background:#0006}
     #speaker{position:relative;display:grid;place-items:center;width:38px;height:38px;padding:6px;border:0;background:transparent;border-radius:50%;color:#fff}
     #speaker:hover,#speaker:focus-visible{background:#ffffff18}
@@ -270,7 +267,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #speaker:hover .sound-tooltip,#speaker:focus-visible .sound-tooltip{opacity:1;visibility:visible}
     .sound-tooltip kbd{padding:0 3px;border:1px solid #ffffff70;border-radius:3px;font:inherit}
     .sound-control #volume{width:100px;accent-color:#fff}
-    @media(prefers-reduced-motion:reduce){.toggle-pill,.toggle-label,.toggle-icon{transition-duration:.01ms}}
+    @media(prefers-reduced-motion:reduce){.toggle-switch,.toggle-knob{transition-duration:.01ms}}
   `;
   // Build static controls through DOM APIs, including in worlds where YouTube
   // requires TrustedHTML. No policy override or HTML string injection needed.
@@ -347,11 +344,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     speakerIcon, node("span", { class: "sound-tooltip", "aria-hidden": "true" }, node("span", { id: "speaker-tip" }, "Mute"), node("kbd", {}, "M")));
   const speed = node("select", { id: "speed", "data-active": "", "aria-label": "Playback speed" },
     ...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => node("option", rate === 1 ? { selected: "" } : {}, String(rate))));
-  const playlistRetentionInput = node("input", { id: "playlist-retention-capacity", type: "range", min: "1", max: "3", step: "1",
-    value: String(playlistPreviewRetentionCapacity), "aria-label": "Playlist previews kept ready",
-    "aria-valuetext": `${playlistPreviewRetentionCapacity} saved preview` });
-  const playlistRetentionValue = node("output", { id: "playlist-retention-capacity-value", for: "playlist-retention-capacity" },
-    String(playlistPreviewRetentionCapacity));
+  const playlistRetentionInput = node("select", { id: "playlist-retention-capacity", "aria-label": "Preloaded playlist previews",
+    "aria-valuetext": `${playlistPreviewRetentionCapacity} saved preview` },
+    ...[1, 2, 3].map(capacity => node("option", capacity === playlistPreviewRetentionCapacity
+      ? { value: String(capacity), selected: "" } : { value: String(capacity) }, String(capacity))));
   const previewStartupTimeoutInput = node("input", { id: "preview-startup-timeout", type: "range", min: "2", max: "15", step: "1",
     value: String(previewStartupTimeoutSeconds), "aria-label": "Preview startup timeout", "aria-valuetext": `${previewStartupTimeoutSeconds} seconds` });
   const previewStartupTimeoutValue = node("output", { id: "preview-startup-timeout-value", for: "preview-startup-timeout" }, `${previewStartupTimeoutSeconds} s`);
@@ -381,6 +377,9 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const uiLanguageSelect = node("select", { id: "ui-language", "aria-label": "Interface language" },
     node("option", { value: "en" }, "English"), node("option", { value: "zh-TW" }, "繁體中文"));
   const logAutoSaveInput = node("input", { id: "auto-save-logs", type: "checkbox", "aria-label": "Auto-save logs" });
+  const downloadLogButton = node("button", { id: "export", type: "button" },
+    icon("M12 3v12 M7 10l5 5 5-5 M5 17v3h14v-3"),
+    node("span", { id: "download-current-log-label" }, "Download current log"));
   const videoIdSearchButton = node("button", { id: "video-id-search", type: "button", "aria-pressed": String(!urlSearchEnabled) }, "Video ID");
   const urlSearchButton = node("button", { id: "url-search", type: "button", "aria-pressed": String(urlSearchEnabled) }, "Full URL");
   const searchModeButtons = node("div", { class: "search-mode-buttons", role: "group", "aria-labelledby": "url-search-label" },
@@ -413,7 +412,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       node("div", { id: "playmium-panel", role: "tabpanel", "aria-labelledby": "playmium-tab", hidden: "" },
         node("div", { class: "preview-mode-card" }, node("strong", { id: "preview-mode-label" }, "Inline video previews"),
           node("button", { id: "enable", class: "preview-toggle", role: "switch", "aria-label": "Enable inline video previews", "aria-checked": "false" },
-            node("span", { class: "toggle-pill", "aria-hidden": "true" }, node("span", { class: "toggle-label" }, "PREV"), node("span", { class: "toggle-icon" }, "▶")),
+            node("span", { class: "toggle-switch", "aria-hidden": "true" }, node("span", { class: "toggle-knob" })),
             node("span", { id: "enabled-state", "aria-hidden": "true" }, "Off"))),
         node("div", { class: "language-row" }, node("label", {},
           node("span", { id: "ui-language-label" }, "Interface language"), uiLanguageSelect)),
@@ -427,20 +426,23 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
           settingRow("Preview startup attempts", previewStartupAttemptsInput, previewStartupAttemptsValue, "preview-startup-attempts-label")),
         node("div", { class: "settings-group" },
           node("h3", { id: "playlist-previews-heading" }, "Playlist previews"),
-          settingRow("Playlist previews kept ready", playlistRetentionInput, playlistRetentionValue, "playlist-retention-label"),
+          row(node("label", {}, node("span", { class: "setting-label", id: "playlist-retention-label" }, "Preloaded playlist previews"), playlistRetentionInput)),
           settingRow("Retries per loading step", playlistStageRetryLimitInput, playlistStageRetryLimitValue, "playlist-retries-label"),
-          node("h4", { id: "playlist-timeouts-heading" }, "Playlist loading timeouts"),
-          playlistTimeoutRow("starting", "Prepare preview", "Prepare playlist preview timeout"),
-          playlistTimeoutRow("ready", "Start player", "Start playlist player timeout"),
-          playlistTimeoutRow("request", "Load video", "Load playlist video timeout")),
+          playlistTimeoutRow("starting", "Prepare preview timeout", "Prepare preview timeout"),
+          playlistTimeoutRow("ready", "Start player timeout", "Start player timeout"),
+          playlistTimeoutRow("request", "Load video timeout", "Load video timeout")),
         node("div", { class: "restore-row" }, restoreDefaultsButton),
         node("p", { id: "shortcut-help" }, node("small", {}, "Drag the video to move. C subtitles; F fullscreen; Esc leaves fullscreen or closes the floating preview. Click × or outside to close. K / Space play/pause; arrows seek; M mute; Alt+P settings.")),
         row(node("span", { id: "audio-test-label" }, "Audio test:"), button("heard", "Audio works"), button("silent", "No audio")),
         node("p", { id: "audio" }),
-        node("details", {}, node("summary", { id: "troubleshooting-label" }, "Troubleshooting"),
-          row(node("label", {}, logAutoSaveInput, node("span", { id: "auto-save-logs-label" }, "Auto-save logs"))),
-          node("p", {}, node("small", { id: "debug-log-status", role: "status" }, "Current log is available for download.")),
-          node("pre", { id: "state" }), button("export", "Download current log", false))),
+        node("details", { id: "troubleshooting" }, node("summary", { id: "troubleshooting-label" }, "Troubleshooting"),
+          node("div", { class: "troubleshooting-content" },
+            node("label", { class: "troubleshooting-toggle" },
+              node("span", { id: "auto-save-logs-label" }, "Auto-save logs"),
+              logAutoSaveInput),
+            node("small", { id: "debug-log-status", role: "status" }, "Current log is available for download."),
+            downloadLogButton,
+            node("pre", { id: "state", hidden: "" })))),
     ),
   ));
   // The viewing timeline stays available even when the experiment panel is
@@ -478,6 +480,51 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #playmium-panel .settings-group>.row>label>output{display:grid;grid-template-columns:48px 68px;justify-content:end;column-gap:8px;text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
     .search-mode-card{background:transparent;border-color:#ffffff1c}
     .search-mode-buttons{display:flex;gap:6px;flex-shrink:0}.search-mode-buttons button{min-width:76px;white-space:nowrap}.search-mode-buttons button[aria-pressed=true]{background:#bbf7d0;border-color:#86efac;color:#14532d}
+    #controls{width:440px;height:326px}
+    #controls:has(#playmium-panel:not([hidden]) #troubleshooting[open]){height:auto;min-height:326px}
+    #playmium-main{display:grid;gap:6px}
+    #playmium-main>.preview-mode-card{min-height:34px;margin:0;padding:2px 0;border:0;border-radius:0;background:transparent}
+    #playmium-main>.language-row,#playmium-main>.row{margin:0}
+    #playmium-main>.language-row label,#playmium-main>.row>label{display:grid;grid-template-columns:minmax(0,1fr) 190px;align-items:center;gap:14px;width:100%;white-space:normal}
+    #playmium-main .select-trigger{width:100%;min-height:35px;padding-top:6px;padding-bottom:6px}
+    #playmium-actions{display:grid;gap:6px;margin-top:1px}
+    .panel-nav-button{width:100%;min-height:35px;padding:6px 12px;background:transparent;border-color:#4f829e;color:#dce5ee;text-align:center}
+    .panel-nav-button:hover,.panel-nav-button:focus-visible{background:#5eead40a;border-color:#78b9c7}
+    #advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px}
+    #advanced-settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;border-bottom:1px solid #ffffff1c}
+    #advanced-settings-header strong{font-size:16px}
+    #advanced-settings-close{display:grid;place-items:center;width:34px;height:34px;padding:0;background:transparent;border:0;color:#aeb9c7;font-size:18px}
+    #advanced-settings-close:hover,#advanced-settings-close:focus-visible{background:transparent;border:0;color:#fff;outline:0}
+    #advanced-settings>.settings-group{margin-top:14px;padding-top:14px}
+    #advanced-settings-header + .settings-group{border-top:0;margin-top:12px;padding-top:0}
+    #advanced-settings .search-mode-card{min-height:48px;margin:8px 0 0;padding:8px 12px;background:#ffffff05;border-color:#ffffff20}
+    #advanced-settings .settings-group h3{color:#73aeb0;font-size:13px;font-weight:650}
+    #advanced-settings .settings-group>.row{margin-top:11px}
+    #advanced-settings .settings-group>.row>label{display:grid;grid-template-columns:minmax(230px,1fr) 164px 122px;align-items:center;gap:12px;width:100%;white-space:nowrap}
+    #advanced-settings .setting-label{min-width:0}
+    #advanced-settings .settings-group input[type=range]{width:100%;min-width:0}
+    #advanced-settings .settings-group output{text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
+    #advanced-settings .settings-group output.playlist-timeout-output{display:grid;grid-template-columns:44px 68px;justify-content:end;column-gap:8px}
+    #advanced-settings .timeout-seconds{color:#91a0b3}
+    #troubleshooting{width:100%;margin:0;padding:0;overflow:hidden;border:1px solid #4f829e;border-radius:10px;color:#aeb9c8;background:#07111b24}
+    #troubleshooting summary{display:flex;align-items:center;gap:10px;width:100%;min-height:35px;padding:7px 12px;border:0;background:transparent;color:#c8d2de;font-size:12px;font-weight:500;list-style:none}
+    #troubleshooting summary::-webkit-details-marker{display:none}
+    #troubleshooting summary::before{content:"";width:0;height:0;border-top:4px solid transparent;border-bottom:4px solid transparent;border-left:6px solid currentColor;transition:transform .14s}
+    #troubleshooting summary:hover,#troubleshooting summary:focus-visible{color:#eef3f9;background:#ffffff0b}
+    #troubleshooting[open]{padding:0}
+    #troubleshooting[open] summary{border-bottom:1px solid #ffffff1c}
+    #troubleshooting[open] summary::before{transform:rotate(90deg)}
+    .troubleshooting-content{display:grid;gap:12px;padding:12px;background:#ffffff03}
+    .troubleshooting-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;gap:16px;color:#dce5ee}
+    .troubleshooting-toggle input[type=checkbox]{appearance:none;width:42px;height:23px;flex:0 0 42px;margin:0;border:1px solid #52657b;border-radius:13px;background:radial-gradient(circle at 11px 50%,#c8d2de 0 7px,transparent 8px),#263547;transition:background .18s,border-color .18s}
+    .troubleshooting-toggle input[type=checkbox]:checked{border-color:#4dd9e3;background:radial-gradient(circle at calc(100% - 11px) 50%,#fff 0 7px,transparent 8px),#22b8c6}
+    #troubleshooting #debug-log-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+    #troubleshooting #export{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px;margin:0;padding:8px 12px;background:#1976bd17;border-color:#3484c1;color:#e4edf6}
+    #troubleshooting #export svg{width:18px;height:18px}
+    #troubleshooting #export:hover,#troubleshooting #export:focus-visible{background:#1976bd2b;border-color:#55a5e1}
+    @container(min-width:1160px){#advanced-settings{right:468px}}
+    @container(max-width:760px){#advanced-settings .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 116px;row-gap:6px;white-space:normal}#advanced-settings .setting-label{grid-column:1/-1}#advanced-settings .settings-group input[type=range]{grid-column:1}#advanced-settings .settings-group output{grid-column:2}}
+    @media(prefers-reduced-motion:reduce){#controls{transition:none}}
     #controls{z-index:6}section{cursor:default;overscroll-behavior:contain}pre{overscroll-behavior:contain}
     #caption-status:empty{display:none} p:has(#caption-status:empty){display:none} #quality-status{font-size:11px;color:#91a0b3} details{border-top:1px solid #ffffff14;padding-top:10px;margin-top:12px;color:#aeb9c8} details button{font-size:11px} summary{cursor:pointer;font-size:12px}
     #progress-display{position:absolute;inset:auto 0 0;padding:34px 14px 8px;border-radius:0;background:linear-gradient(transparent,#000d);z-index:3;pointer-events:auto}
@@ -501,7 +548,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     .row>label{gap:10px;white-space:nowrap}.select-trigger{position:relative;width:190px;min-width:0;text-align:left;padding:8px 28px 8px 10px;border:1px solid #ffffff24;border-radius:8px;background:#242832;color:#eef3f9;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;font-size:12px}.select-trigger::after{content:"";position:absolute;right:11px;top:12px;width:6px;height:6px;border-right:1.5px solid #a9b9c9;border-bottom:1.5px solid #a9b9c9;transform:rotate(45deg)}.select-trigger[aria-expanded=true]{border-color:#5eead4;background:#293340}.select-trigger:hover:enabled{background:#2d3440;border-color:#8194a8}.select-trigger:disabled{opacity:.45}
     .select-menu{position:absolute;z-index:20;overflow-y:auto;overscroll-behavior:contain;padding:4px;background:#1d232dfc;color:#eef3f9;border:1px solid #63788c;border-radius:10px;box-shadow:0 12px 32px #0009;pointer-events:auto;font:12px/1.4 system-ui;scrollbar-width:thin;scrollbar-color:#6c7d8e #202631;outline:none}.select-option{position:relative;min-height:36px;padding:9px 29px 9px 10px;border-radius:6px;cursor:pointer;white-space:normal;overflow-wrap:anywhere}.select-option.active{background:#354353}.select-option[aria-selected=true]{color:#74efdc;background:#203d3d}.select-option[aria-selected=true]::after{content:"✓";position:absolute;right:9px;top:9px}.select-option[aria-disabled=true]{opacity:.45;cursor:default}
     @media(max-width:520px){section{right:8px;width:290px;padding:10px;max-width:calc(100vw - 48px)}.row select{width:170px}.player-button,#speaker{width:30px;height:30px;padding:5px}#transport{gap:2px}#time{font-size:10px;margin:0 2px}.sound-control:hover #volume,.sound-control:focus-within #volume{width:50px}}
-    @container(max-width:560px){#transport{gap:2px;overflow-x:auto;scrollbar-width:none}.player-button,#speaker{width:28px;height:30px;padding:5px}#time{font-size:10px;margin:0 2px}#chapters{max-width:100px;flex-shrink:1;padding:4px;min-width:20px}#playlist-toggle{min-width:30px;padding:4px}#playlist-position{display:none}#progress-display{padding-left:8px;padding-right:8px}.sound-control:hover #volume,.sound-control:focus-within #volume{width:45px}section{width:calc(100% - 24px);max-width:326px}#playmium-panel .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 140px;white-space:normal;row-gap:6px}#playmium-panel .setting-label{grid-column:1/-1}#playmium-panel .settings-group input[type=range]{grid-column:1}#playmium-panel .settings-group output{grid-column:2;font-size:10.5px}.language-row label{align-items:flex-start;flex-direction:column}.language-row select{width:100%;margin-top:6px}.preview-mode-card{padding:9px 10px}}
+    @container(max-width:560px){#transport{gap:2px;overflow-x:auto;scrollbar-width:none}.player-button,#speaker{width:28px;height:30px;padding:5px}#time{font-size:10px;margin:0 2px}#chapters{max-width:100px;flex-shrink:1;padding:4px;min-width:20px}#playlist-toggle{min-width:30px;padding:4px}#playlist-position{display:none}#progress-display{padding-left:8px;padding-right:8px}.sound-control:hover #volume,.sound-control:focus-within #volume{width:45px}section{width:calc(100% - 24px);max-width:326px}#controls{height:326px}#controls:has(#playmium-panel:not([hidden]) #troubleshooting[open]){height:auto;min-height:326px}#playmium-panel .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 140px;white-space:normal;row-gap:6px}#playmium-panel .setting-label{grid-column:1/-1}#playmium-panel .settings-group input[type=range]{grid-column:1}#playmium-panel .settings-group output{grid-column:2;font-size:10.5px}#playmium-main>.language-row label,#playmium-main>.row>label{grid-template-columns:minmax(0,1fr) 138px}.language-row select{width:100%;margin-top:0}.preview-mode-card{padding:2px 0}}
   `;
   shadow.append(playerStyle);
   const playlistStyle = document.createElement("style");
@@ -593,13 +640,85 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     node("div", { id: "playlist-edge-zone" }, sidePanelTabs),
     chapterPanel, playlistDrawer, playlistResizeProxy);
   playlistShadow.append(playlistStyle, playlistSurface);
-  const diagnostics = shadow.querySelector("details")!;
+
+  const diagnostics = shadow.getElementById("troubleshooting") as HTMLDetailsElement;
   const audioButtons = shadow.getElementById("heard")!.parentElement!;
   const shortcutHelp = shadow.getElementById("shortcut-help")!;
-  diagnostics.append(shadow.getElementById("message")!, audioButtons, shadow.getElementById("audio")!, shortcutHelp);
+
+  const playmiumPanelElement = shadow.getElementById("playmium-panel")!;
+  const compactPlaymiumMain = node("div", { id: "playmium-main" });
+
+  const advancedSettingsOpen = node("button", {
+    id: "advanced-settings-open", type: "button", class: "panel-nav-button", "aria-expanded": "false", "aria-controls": "advanced-settings"
+  },
+    node("span", { id: "advanced-settings-label" }, "Advanced settings"));
+
+  const advancedSettingsClose = node("button", {
+    id: "advanced-settings-close", type: "button", "aria-label": "Close settings"
+  }, String.fromCodePoint(0x00D7));
+
+  const advancedSettingsView = node("section", { id: "advanced-settings", role: "dialog", "aria-labelledby": "advanced-settings-title", hidden: "" });
+  const advancedSettingsHeader = node("div", { id: "advanced-settings-header" },
+    node("strong", { id: "advanced-settings-title" }, "Advanced settings"),
+    advancedSettingsClose);
+
+  const previewModeCard = shadow.getElementById("preview-mode-label")!.closest<HTMLElement>(".preview-mode-card")!;
+  const languageRow = shadow.getElementById("ui-language-label")!.closest<HTMLElement>(".language-row")!;
+  const messageNode = shadow.getElementById("message")!;
+  const searchGroup = shadow.getElementById("url-search-label")!.closest<HTMLElement>(".settings-group")!;
+  searchGroup.prepend(node("h3", { id: "preview-search-heading" }, "Preview search"));
+  const startupGroup = shadow.getElementById("preview-startup-heading")!.closest<HTMLElement>(".settings-group")!;
+  const playlistGroup = shadow.getElementById("playlist-previews-heading")!.closest<HTMLElement>(".settings-group")!;
+  const playlistRetentionRow = playlistRetentionInput.closest<HTMLElement>(".row")!;
+  const restoreRow = restoreDefaultsButton.closest<HTMLElement>(".restore-row")!;
+
+  const hiddenLegacyUi = node("div", { id: "hidden-legacy-ui", hidden: "" });
+  hiddenLegacyUi.append(messageNode, shortcutHelp, audioButtons, shadow.getElementById("audio")!);
+  shadow.getElementById("state")!.hidden = true;
+  const playmiumActions = node("div", { id: "playmium-actions" }, advancedSettingsOpen, diagnostics);
+
+  compactPlaymiumMain.append(
+    previewModeCard,
+    playlistRetentionRow,
+    languageRow,
+    playmiumActions,
+  );
+
+  advancedSettingsView.append(
+    advancedSettingsHeader,
+    searchGroup,
+    startupGroup,
+    playlistGroup,
+    restoreRow,
+  );
+
+  playmiumPanelElement.replaceChildren(
+    compactPlaymiumMain,
+    hiddenLegacyUi,
+  );
+  shadow.append(advancedSettingsView);
   const element = <T extends HTMLElement>(id: string) => shadow.getElementById(id) as T;
   const infoViewer = createInfoViewer(shadow, () => session, seekTo, pageBridge, previewUiCopy(defaultPreviewUiLanguage));
   const selectControls = createSelectControls(shadow, panel);
+
+  function setAdvancedSettingsOpen(open: boolean, focus = true) {
+    advancedSettingsView.hidden = !open;
+    advancedSettingsOpen.setAttribute("aria-expanded", String(open));
+    selectControls.close();
+    if (focus) (open ? advancedSettingsClose : advancedSettingsOpen).focus({ preventScroll: true });
+  }
+
+  advancedSettingsOpen.onclick = () => setAdvancedSettingsOpen(true);
+  advancedSettingsClose.onclick = () => setAdvancedSettingsOpen(false);
+
+  new MutationObserver(() => {
+    if (element("controls").hidden) {
+      setAdvancedSettingsOpen(false, false);
+    }
+  }).observe(element("controls"), {
+    attributes: true,
+    attributeFilter: ["hidden"],
+  });
   // Keep our controls from reaching YouTube's delegated click/gesture handlers.
   for (const name of ["click", "dblclick", "mousedown", "mouseup", "pointerdown", "pointerup", "keydown", "keyup"]) {
     shadow.addEventListener(name, event => event.stopPropagation());
@@ -666,6 +785,9 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     uiLanguageSelect.value = uiLanguage;
     element("control-panel-title").textContent = copy.controlPanel;
+    element("advanced-settings-label").textContent = copy.advancedSettings;
+    element("advanced-settings-title").textContent = copy.advancedSettings;
+    element("advanced-settings-close").setAttribute("aria-label", copy.closeSettings);
     element("collapse").setAttribute("aria-label", copy.closeSettings);
     element("collapse").dataset.tooltip = copy.closeSettings;
     youtubeControlsTab.textContent = copy.youtube;
@@ -677,6 +799,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     uiLanguageSelect.options[1].textContent = copy.traditionalChinese;
     element("preview-startup-heading").textContent = copy.previewStartup;
     element("url-search-label").textContent = copy.urlSearch;
+    element("preview-search-heading").textContent = copy.urlSearch;
     updateSearchControl();
     element("preview-startup-timeout-label").textContent = copy.previewStartupTimeout;
     previewStartupTimeoutInput.setAttribute("aria-label", copy.previewStartupTimeout);
@@ -687,11 +810,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistRetentionInput.setAttribute("aria-label", copy.playlistPreviewsKeptReady);
     element("playlist-retries-label").textContent = copy.retriesPerLoadingStep;
     playlistStageRetryLimitInput.setAttribute("aria-label", copy.retriesPerLoadingStep);
-    element("playlist-timeouts-heading").textContent = copy.playlistLoadingTimeouts;
     for (const [stage, label, accessibleLabel] of [
-      ["starting", copy.preparePreview, copy.preparePreviewTimeout],
-      ["ready", copy.startPlayer, copy.startPlayerTimeout],
-      ["request", copy.loadVideo, copy.loadVideoTimeout],
+      ["starting", copy.preparePreviewTimeout, copy.preparePreviewTimeout],
+      ["ready", copy.startPlayerTimeout, copy.startPlayerTimeout],
+      ["request", copy.loadVideoTimeout, copy.loadVideoTimeout],
     ] as const) {
       element(`playlist-${stage}-timeout-label`).textContent = label;
       playlistTimeoutInputs[stage].setAttribute("aria-label", accessibleLabel);
@@ -704,7 +826,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("troubleshooting-label").textContent = copy.troubleshooting;
     element("auto-save-logs-label").textContent = copy.autoSaveLogs;
     logAutoSaveInput.setAttribute("aria-label", copy.autoSaveLogs);
-    element("export").textContent = copy.downloadCurrentLog;
+    element("download-current-log-label").textContent = copy.downloadCurrentLog;
     element("subtitles-label").textContent = copy.subtitles;
     element("caption-language").setAttribute("aria-label", copy.subtitleLanguage);
     element("auto-translate-label").textContent = copy.autoTranslate;
@@ -2157,7 +2279,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistPreviewRetentionCapacity = normalizePlaylistPreviewRetentionCapacity(value);
     playlistRetentionInput.value = String(playlistPreviewRetentionCapacity);
     playlistRetentionInput.setAttribute("aria-valuetext", previewUiCopy(uiLanguage).readyPreviews(playlistPreviewRetentionCapacity));
-    playlistRetentionValue.textContent = String(playlistPreviewRetentionCapacity);
+    selectControls.sync();
     if (session?.playlistContext) {
       session.video.dispatchEvent(new CustomEvent(playlistPreviewRetentionEvent, { bubbles: true, detail: JSON.stringify({
         capacity: playlistPreviewRetentionCapacity,
@@ -2431,6 +2553,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let selectedControlTab: ControlTab = "youtube";
   function selectControlTab(tab: ControlTab, focus = false) {
     selectedControlTab = tab;
+    if (tab !== "playmium") setAdvancedSettingsOpen(false, false);
     const youtubeSelected = tab === "youtube";
     youtubeControlsTab.setAttribute("aria-selected", String(youtubeSelected));
     youtubeControlsTab.tabIndex = youtubeSelected ? 0 : -1;
@@ -2499,7 +2622,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     chapterPanel.hidden = !opening;
     sidePanelTab = opening ? "chapters" : null;
     chapterSideTab.setAttribute("aria-selected", String(sidePanelTab === "chapters"));
-    playlistSideTab.setAttribute("aria-selected", String(sidePanelTab === "playlist"));
+    playlistSideTab.setAttribute("aria-selected", "false");
     playlistSurface.dataset.activeTab = sidePanelTab ?? "";
     playlistSurface.dataset.expanded = String(opening);
     playlistRevealed = false;
@@ -2535,7 +2658,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   shadow.addEventListener("click", event => {
     const path = event.composedPath();
     if (session && typeof playlistExpanded !== "undefined" && playlistExpanded && !path.includes(playlistButton)) setPlaylistExpanded(false);
-    if (session && !path.includes(element("controls")) && !path.includes(element("settings")) &&
+    if (session && !path.includes(element("controls")) && !path.includes(advancedSettingsView) && !path.includes(element("settings")) &&
         !path.includes(element("preview-select-menu")) && !path.includes(chapterPanel) && !path.includes(chapterButton)) hideSettings();
     if (session && !path.includes(infoViewer.root) && !path.includes(infoButton)) hideInfoViewer();
     infoButton.setAttribute("aria-expanded", String(infoViewer.isOpen()));
@@ -2984,6 +3107,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   }, true);
   window.addEventListener("keydown", event => {
     if (!supportedPage() || event.composedPath().some(target => target instanceof Element && target.closest(shortsSelector))) return;
+    if (event.code === "Escape" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey && !advancedSettingsView.hidden) {
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (!event.repeat) setAdvancedSettingsOpen(false, true);
+      return;
+    }
     if (event.code === "Escape" && !event.altKey && !event.ctrlKey && !event.metaKey && !event.shiftKey &&
         (overlaysOpen() || session || loading)) {
       event.preventDefault(); event.stopImmediatePropagation();

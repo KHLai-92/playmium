@@ -135,6 +135,7 @@ export type PreviewUiCopy = Readonly<{
   previewUnavailableNoVideo: string;
   unavailable: string;
   previewError(message: string): string;
+  advancedSettings: string;
   timeoutDescription(multiplier: number, seconds: number): string;
   seconds(value: number): string;
   attempts(value: number): string;
@@ -160,15 +161,15 @@ const english: PreviewUiCopy = {
   previewStartupTimeout: "Preview startup timeout",
   previewStartupAttempts: "Preview startup attempts",
   playlistPreviews: "Playlist previews",
-  playlistPreviewsKeptReady: "Playlist previews kept ready",
+  playlistPreviewsKeptReady: "Preloaded playlist previews",
   retriesPerLoadingStep: "Retries per loading step",
   playlistLoadingTimeouts: "Playlist loading timeouts",
   preparePreview: "Prepare preview",
   startPlayer: "Start player",
   loadVideo: "Load video",
-  preparePreviewTimeout: "Prepare playlist preview timeout",
-  startPlayerTimeout: "Start playlist player timeout",
-  loadVideoTimeout: "Load playlist video timeout",
+  preparePreviewTimeout: "Prepare preview timeout",
+  startPlayerTimeout: "Start player timeout",
+  loadVideoTimeout: "Load video timeout",
   restoreAllDefaults: "Restore all defaults",
   restoreAllDefaultsTitle: "Restore every persistent Playmium setting to its original value",
   audioTest: "Audio test:",
@@ -276,6 +277,7 @@ const english: PreviewUiCopy = {
   previewUnavailableNoVideo: "Preview unavailable. YouTube has not supplied video yet. Try again or close the preview.",
   unavailable: "Unavailable",
   previewError: message => message,
+  advancedSettings: "Advanced settings",
   timeoutDescription: (multiplier, seconds) => `${multiplier} times the standard timeout; ${seconds} seconds`,
   seconds: value => `${value} s`,
   attempts: value => `${value} attempt${value === 1 ? "" : "s"}`,
@@ -301,15 +303,15 @@ const traditionalChinese: PreviewUiCopy = {
   previewStartupTimeout: "預覽啟動逾時",
   previewStartupAttempts: "預覽啟動嘗試次數",
   playlistPreviews: "播放清單預覽",
-  playlistPreviewsKeptReady: "保留待播的清單預覽",
+  playlistPreviewsKeptReady: "預載清單預覽",
   retriesPerLoadingStep: "各載入步驟重試次數",
   playlistLoadingTimeouts: "播放清單載入逾時",
   preparePreview: "準備預覽",
   startPlayer: "啟動播放器",
   loadVideo: "載入影片",
-  preparePreviewTimeout: "準備播放清單預覽的逾時",
-  startPlayerTimeout: "啟動播放清單播放器的逾時",
-  loadVideoTimeout: "載入播放清單影片的逾時",
+  preparePreviewTimeout: "準備預覽逾時",
+  startPlayerTimeout: "啟動播放器逾時",
+  loadVideoTimeout: "載入影片逾時",
   restoreAllDefaults: "全部恢復預設值",
   restoreAllDefaultsTitle: "將所有持久化的 Playmium 設定恢復為原始值",
   audioTest: "音訊測試：",
@@ -436,6 +438,7 @@ const traditionalChinese: PreviewUiCopy = {
     if (quality) return "YouTube 未能完成切換至 " + quality[1] + "。";
     return message;
   },
+  advancedSettings: "進階設定",
   timeoutDescription: (multiplier, seconds) => `標準逾時的 ${multiplier} 倍；${seconds} 秒`,
   seconds: value => `${value} 秒`,
   attempts: value => `${value} 次嘗試`,
