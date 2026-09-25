@@ -164,19 +164,22 @@ try {
     select.dispatchEvent(new Event("change", { bubbles: true }));
   });
   assert.equal(await page.locator("#advanced-settings-label").textContent(), "進階設定");
-  assert.equal(await page.locator("#playlist-retention-label").textContent(), "保留待播預覽");
+  assert.equal(await page.locator("#youtube-tab").textContent(), "YouTube");
+  assert.equal(await page.locator("#playmium-tab").textContent(), "Playmium");
+  assert.equal(await page.locator("#playlist-retention-label").textContent(), "待播保留上限");
   assert.ok(await page.locator("#playmium-main").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,
     "Traditional Chinese main-panel copy should not overflow horizontally");
   await page.locator("#advanced-settings-open").click();
   assert.equal(await page.locator("#url-search-label").textContent(), "搜尋方式");
-  assert.equal(await page.locator("#url-search").textContent(), "完整網址");
+  assert.equal(await page.locator("#url-search").textContent(), "影片網址");
+  assert.equal(await page.locator("#playlist-retries-label").textContent(), "每階段嘗試上限");
   assert.ok(await page.locator("#advanced-settings").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,
     "Traditional Chinese advanced-settings copy should not overflow horizontally");
   await page.locator("#advanced-settings-close").click();
   await page.locator("#youtube-tab").click();
   assert.equal(await page.locator("#subtitles-label").textContent(), "字幕");
   assert.equal(await page.locator("#auto-translate-label").textContent(), "自動翻譯");
-  assert.equal(await page.locator("#speed-label").textContent(), "速度");
+  assert.equal(await page.locator("#speed-label").textContent(), "播放速度");
   assert.equal(await page.locator("#quality-label").textContent(), "畫質");
   assert.equal(await page.locator("#caption-translation option").first().textContent(), "不翻譯");
   assert.equal(await page.locator('#speed option[value="1"]').textContent(), "1×");
