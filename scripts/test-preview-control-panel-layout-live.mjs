@@ -47,6 +47,8 @@ try {
   assert.ok(playmiumOverflow <= 1, "collapsed Playmium controls should fit the YouTube-sized panel without scrolling");
   assert.ok(Math.abs(retentionBox.width - languageBox.width) <= 2,
     "retention and language selects should share a column width");
+  assert.ok(languageBox.y < retentionBox.y,
+    "interface language should appear before previews kept ready");
   assert.equal(await page.locator(".toggle-switch").count(), 1,
     "preview mode should use the standard switch treatment");
   await page.locator("#advanced-settings-open").click();
@@ -63,6 +65,45 @@ try {
   assert.equal(await page.locator("#advanced-settings-close").evaluate(element =>
     getComputedStyle(element).borderTopWidth), "0px",
   "advanced-settings close button should not have an outline box");
+  const startupAttemptsBox = await page.locator("#preview-startup-attempts").boundingBox();
+  const startupTimeoutBox = await page.locator("#preview-startup-timeout").boundingBox();
+  assert.ok(startupAttemptsBox && startupTimeoutBox && startupAttemptsBox.y < startupTimeoutBox.y,
+    "maximum startup attempts should appear before attempt timeout");
+  assert.deepEqual(await page.locator("#playlist-stage-retry-limit").evaluate(element => ({
+    min: element.getAttribute("min"), max: element.getAttribute("max"), value: element.value,
+  })), { min: "1", max: "4", value: "4" },
+  "the retry setting should expose one through four attempts");
+  const advancedSizeBeforeHelp = { width: advancedBox.width, height: advancedBox.height };
+  assert.equal(await page.locator("#advanced-settings .settings-help").count(), 1,
+    "only the Advanced settings header should retain a tooltip icon");
+  assert.equal(await page.locator("#advanced-settings .settings-text-help").count(), 8,
+    "every Advanced settings detail should expose its tooltip from text");
+  assert.equal(await page.locator("#advanced-settings .settings-group h3[data-tooltip]").count(), 0,
+    "section titles must not expose tooltips");
+  await page.locator("#advanced-settings-help").hover();
+  const advancedSizeWithHelp = await advancedSettings.boundingBox();
+  assert.ok(advancedSizeWithHelp &&
+    advancedSizeWithHelp.width === advancedSizeBeforeHelp.width &&
+    advancedSizeWithHelp.height === advancedSizeBeforeHelp.height,
+  "showing a tooltip must not enlarge advanced settings");
+  assert.equal(await advancedSettings.evaluate(element => getComputedStyle(element).overflowX), "hidden",
+    "advanced-settings tooltips must not escape the panel horizontally");
+  await page.locator("#url-search-label").hover();
+  const searchTooltip = page.locator("#settings-tooltip");
+  const searchTooltipBox = await searchTooltip.boundingBox();
+  assert.ok(searchTooltipBox, "Search with tooltip must be visible");
+  assert.equal(await searchTooltip.getAttribute("data-lines"), "2",
+    "Search with tooltip should use its two-line treatment");
+  assert.match(await searchTooltip.textContent(), /\.\nFull video URL is recommended\.$/,
+    "Search with tooltip should break between its two sentences");
+  assert.ok(Math.abs(searchTooltipBox.width - 300) <= 1,
+    `Search with tooltip should be only slightly wider, got ${searchTooltipBox.width}px`);
+  assert.ok(searchTooltipBox.x >= advancedBox.x && searchTooltipBox.y >= advancedBox.y &&
+    searchTooltipBox.x + searchTooltipBox.width <= advancedBox.x + advancedBox.width &&
+    searchTooltipBox.y + searchTooltipBox.height <= advancedBox.y + advancedBox.height,
+  "Search with tooltip must remain inside Advanced settings");
+  await page.locator("#playlist-starting-timeout-label").hover();
+  assert.equal(await searchTooltip.textContent(), "Finds the matching video.");
   const failures = [];
   if (advancedBox.x < hostBox.x) {
     failures.push(`advanced settings starts outside its host: ${advancedBox.x} < ${hostBox.x}`);
@@ -97,10 +138,40 @@ try {
     failures.push("YouTube and Playmium tabs should keep the same panel dimensions");
   }
 
+  await page.locator("#playmium-tab").click();
+  if (await page.locator("#troubleshooting").getAttribute("open") !== null) {
+    await page.locator("#troubleshooting summary").click();
+  }
+  await page.locator("#ui-language").evaluate(element => {
+    const select = /** @type {HTMLSelectElement} */ (element);
+    select.value = "zh-TW";
+    select.dispatchEvent(new Event("change", { bubbles: true }));
+  });
+  assert.equal(await page.locator("#advanced-settings-label").textContent(), "進階設定");
+  assert.equal(await page.locator("#playlist-retention-label").textContent(), "保留待播預覽");
+  assert.ok(await page.locator("#playmium-main").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,
+    "Traditional Chinese main-panel copy should not overflow horizontally");
+  await page.locator("#advanced-settings-open").click();
+  assert.equal(await page.locator("#url-search-label").textContent(), "搜尋方式");
+  assert.equal(await page.locator("#url-search").textContent(), "完整網址");
+  assert.ok(await page.locator("#advanced-settings").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,
+    "Traditional Chinese advanced-settings copy should not overflow horizontally");
+  await page.locator("#advanced-settings-close").click();
+  await page.locator("#youtube-tab").click();
+  assert.equal(await page.locator("#subtitles-label").textContent(), "字幕");
+  assert.equal(await page.locator("#auto-translate-label").textContent(), "自動翻譯");
+  assert.equal(await page.locator("#speed-label").textContent(), "速度");
+  assert.equal(await page.locator("#quality-label").textContent(), "畫質");
+  assert.equal(await page.locator("#caption-translation option").first().textContent(), "不翻譯");
+  assert.equal(await page.locator('#speed option[value="1"]').textContent(), "1×");
+  assert.equal(await page.locator("#quality option").first().textContent(), "自動");
+  assert.equal(await page.locator("#caption-status").textContent(), "");
+  assert.equal(await page.locator("#quality-status").textContent(), "");
+  await page.locator("#playmium-tab").click();
+
   assert.deepEqual(failures, []);
   if (process.env.PLAYMIUM_LAYOUT_SCREENSHOTS === "1") {
     await host.evaluate(element => { element.style.width = "1270px"; });
-    await page.locator("#playmium-tab").click();
     if (await page.locator("#troubleshooting").getAttribute("open") !== null) {
       await page.locator("#troubleshooting summary").click();
     }

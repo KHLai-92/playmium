@@ -4,23 +4,31 @@ export const defaultPreviewUiLanguage: PreviewUiLanguage = "en";
 
 export type PreviewUiCopy = Readonly<{
   controlPanel: string;
-  closeSettings: string;
+  closeControlPanel: string;
+  closeAdvancedSettings: string;
   youtube: string;
+  playmium: string;
   inlineVideoPreviews: string;
-  enableInlineVideoPreviews: string;
+  inlineVideoPreviewsHelp: string;
   interfaceLanguage: string;
   english: string;
   traditionalChinese: string;
   previewStartup: string;
   urlSearch: string;
+  urlSearchMethod: string;
+  urlSearchHelp: string;
   urlSearchVideoId: string;
   urlSearchFullUrl: string;
   settingsSaveFailed: string;
   previewStartupTimeout: string;
+  previewStartupTimeoutHelp: string;
   previewStartupAttempts: string;
+  previewStartupAttemptsHelp: string;
   playlistPreviews: string;
   playlistPreviewsKeptReady: string;
+  playlistPreviewsKeptReadyHelp: string;
   retriesPerLoadingStep: string;
+  retriesPerLoadingStepHelp: string;
   playlistLoadingTimeouts: string;
   preparePreview: string;
   startPlayer: string;
@@ -28,6 +36,9 @@ export type PreviewUiCopy = Readonly<{
   preparePreviewTimeout: string;
   startPlayerTimeout: string;
   loadVideoTimeout: string;
+  preparePreviewTimeoutHelp: string;
+  startPlayerTimeoutHelp: string;
+  loadVideoTimeoutHelp: string;
   restoreAllDefaults: string;
   restoreAllDefaultsTitle: string;
   audioTest: string;
@@ -35,9 +46,11 @@ export type PreviewUiCopy = Readonly<{
   noAudio: string;
   troubleshooting: string;
   autoSaveLogs: string;
+  troubleshootingDescription: string;
   autoSaveLogsOn: string;
   autoSaveLogsOff: string;
   downloadCurrentLog: string;
+  downloadCurrentLogHelp: string;
   subtitles: string;
   subtitleLanguage: string;
   autoTranslate: string;
@@ -46,6 +59,19 @@ export type PreviewUiCopy = Readonly<{
   playbackSpeed: string;
   quality: string;
   videoQuality: string;
+  translationOff: string;
+  normalPlaybackSpeed: string;
+  qualityAuto: string;
+  qualityHighest: string;
+  waitingForVideo: string;
+  startPreviewForSubtitles: string;
+  startPreviewForQuality: string;
+  subtitlesUnavailable: string;
+  qualityUnavailable: string;
+  qualitySwitching(label: string): string;
+  qualityStillDifferent(label: string): string;
+  qualityAutomatic: string;
+  qualityPlaying(resolution: string, status: string): string;
   on: string;
   off: string;
   videoDescriptionAndComments: string;
@@ -136,6 +162,7 @@ export type PreviewUiCopy = Readonly<{
   unavailable: string;
   previewError(message: string): string;
   advancedSettings: string;
+  advancedSettingsIntro: string;
   timeoutDescription(multiplier: number, seconds: number): string;
   seconds(value: number): string;
   attempts(value: number): string;
@@ -146,40 +173,53 @@ export type PreviewUiCopy = Readonly<{
 
 const english: PreviewUiCopy = {
   controlPanel: "Control panel",
-  closeSettings: "Close settings",
+  closeControlPanel: "Close control panel",
+  closeAdvancedSettings: "Close advanced settings",
   youtube: "YouTube",
-  inlineVideoPreviews: "Inline video previews",
-  enableInlineVideoPreviews: "Enable inline video previews",
+  playmium: "Playmium",
+  inlineVideoPreviews: "Enable previews",
+  inlineVideoPreviewsHelp: "Play videos without leaving the current YouTube page. Turning this off closes the current preview and restores normal YouTube links.",
   interfaceLanguage: "Interface language",
   english: "English",
   traditionalChinese: "繁體中文",
   previewStartup: "Preview startup",
-  urlSearch: "Preview search",
+  urlSearch: "Playlist preview lookup",
+  urlSearchMethod: "Search with",
+  urlSearchHelp: "Choose how Playmium finds playlist previews. Full video URL is recommended.",
   urlSearchVideoId: "Video ID",
   urlSearchFullUrl: "Full URL",
-  settingsSaveFailed: "This page uses your choice, but it could not be saved. Please try again.",
-  previewStartupTimeout: "Preview startup timeout",
-  previewStartupAttempts: "Preview startup attempts",
+  settingsSaveFailed: "Your change is active on this page, but it couldn’t be saved. Please try again.",
+  previewStartupTimeout: "Attempt timeout",
+  previewStartupTimeoutHelp: "Limits how long each startup attempt may take.",
+  previewStartupAttempts: "Max attempts",
+  previewStartupAttemptsHelp: "Limits how many times Playmium tries to start a preview.",
   playlistPreviews: "Playlist previews",
-  playlistPreviewsKeptReady: "Preloaded playlist previews",
-  retriesPerLoadingStep: "Retries per loading step",
+  playlistPreviewsKeptReady: "Previews kept ready",
+  playlistPreviewsKeptReadyHelp: "Keeps 1–3 recently prepared playlist previews ready for 30 seconds so a later click can start faster.",
+  retriesPerLoadingStep: "Max attempts/step",
+  retriesPerLoadingStepHelp: "Applies this limit to each step below.",
   playlistLoadingTimeouts: "Playlist loading timeouts",
   preparePreview: "Prepare preview",
   startPlayer: "Start player",
   loadVideo: "Load video",
-  preparePreviewTimeout: "Prepare preview timeout",
-  startPlayerTimeout: "Start player timeout",
-  loadVideoTimeout: "Load video timeout",
-  restoreAllDefaults: "Restore all defaults",
-  restoreAllDefaultsTitle: "Restore every persistent Playmium setting to its original value",
+  preparePreviewTimeout: "Search timeout",
+  startPlayerTimeout: "Request timeout",
+  loadVideoTimeout: "Response timeout",
+  preparePreviewTimeoutHelp: "Finds the matching video.",
+  startPlayerTimeoutHelp: "Starts the preview data request.",
+  loadVideoTimeoutHelp: "Waits for YouTube’s response.",
+  restoreAllDefaults: "Reset all settings",
+  restoreAllDefaultsTitle: "Restores all Playmium settings to their defaults.",
   audioTest: "Audio test:",
   audioWorks: "Audio works",
   noAudio: "No audio",
   troubleshooting: "Troubleshooting",
-  autoSaveLogs: "Auto-save logs",
-  autoSaveLogsOn: "Auto-save is on.",
-  autoSaveLogsOff: "Current log is available for download.",
-  downloadCurrentLog: "Download current log",
+  autoSaveLogs: "Auto-save diagnostic logs",
+  troubleshootingDescription: "",
+  autoSaveLogsOn: "",
+  autoSaveLogsOff: "",
+  downloadCurrentLog: "Download session log",
+  downloadCurrentLogHelp: "",
   subtitles: "Subtitles",
   subtitleLanguage: "Subtitle language",
   autoTranslate: "Auto-translate",
@@ -188,6 +228,19 @@ const english: PreviewUiCopy = {
   playbackSpeed: "Playback speed",
   quality: "Quality",
   videoQuality: "Video quality",
+  translationOff: "Off",
+  normalPlaybackSpeed: "1×",
+  qualityAuto: "Auto",
+  qualityHighest: "Highest",
+  waitingForVideo: "Waiting for video",
+  startPreviewForSubtitles: "",
+  startPreviewForQuality: "",
+  subtitlesUnavailable: "",
+  qualityUnavailable: "",
+  qualitySwitching: label => `Switching to ${label}…`,
+  qualityStillDifferent: label => `${label} requested; YouTube is still delivering a different quality.`,
+  qualityAutomatic: "YouTube adjusts quality automatically.",
+  qualityPlaying: (resolution, status) => `Playing: ${resolution}.${status ? ` ${status}` : ""}`,
   on: "On",
   off: "Off",
   videoDescriptionAndComments: "Video description and comments",
@@ -272,13 +325,14 @@ const english: PreviewUiCopy = {
   mutedFeedback: "Muted",
   startingVideo: "Starting video…",
   retryingPreview: (attempt, total) => `Retrying preview (${attempt} / ${total})…`,
-  inlinePreviewControlPanel: "Inline Preview control panel",
-  controlPanelSections: "Control panel sections",
+  inlinePreviewControlPanel: "Playmium control panel",
+  controlPanelSections: "Control panel tabs",
   previewUnavailableNoVideo: "Preview unavailable. YouTube has not supplied video yet. Try again or close the preview.",
   unavailable: "Unavailable",
   previewError: message => message,
   advancedSettings: "Advanced settings",
-  timeoutDescription: (multiplier, seconds) => `${multiplier} times the standard timeout; ${seconds} seconds`,
+  advancedSettingsIntro: "Adjust with care. Increase timeouts if previews fail.",
+  timeoutDescription: (multiplier, seconds) => `${multiplier}× default; ${seconds} seconds`,
   seconds: value => `${value} s`,
   attempts: value => `${value} attempt${value === 1 ? "" : "s"}`,
   retries: value => `${value} ${value === 1 ? "retry" : "retries"}`,
@@ -288,40 +342,53 @@ const english: PreviewUiCopy = {
 
 const traditionalChinese: PreviewUiCopy = {
   controlPanel: "控制面板",
-  closeSettings: "關閉設定",
-  youtube: "YouTube",
-  inlineVideoPreviews: "站內影片預覽",
-  enableInlineVideoPreviews: "啟用站內影片預覽",
+  closeControlPanel: "關閉控制面板",
+  closeAdvancedSettings: "關閉進階設定",
+  youtube: "YouTube 播放",
+  playmium: "Playmium 設定",
+  inlineVideoPreviews: "啟用預覽",
+  inlineVideoPreviewsHelp: "不離開目前的 YouTube 頁面即可播放影片。關閉後會結束目前的預覽，YouTube 連結也會恢復一般開啟方式。",
   interfaceLanguage: "介面語言",
   english: "English",
   traditionalChinese: "繁體中文",
   previewStartup: "預覽啟動",
-  urlSearch: "預覽搜尋",
+  urlSearch: "播放清單預覽查找",
+  urlSearchMethod: "搜尋方式",
+  urlSearchHelp: "決定 Playmium 在背景向 YouTube 查找預覽時使用的搜尋格式。建議使用完整影片網址。",
   urlSearchVideoId: "影片 ID",
   urlSearchFullUrl: "完整網址",
-  settingsSaveFailed: "此頁已套用設定，但無法儲存，請再試一次。",
-  previewStartupTimeout: "預覽啟動逾時",
-  previewStartupAttempts: "預覽啟動嘗試次數",
+  settingsSaveFailed: "變更已套用於此頁面，但無法儲存，請再試一次。",
+  previewStartupTimeout: "單次嘗試逾時",
+  previewStartupTimeoutHelp: "限制每次啟動嘗試可花費的時間。",
+  previewStartupAttempts: "最多嘗試次數",
+  previewStartupAttemptsHelp: "限制 Playmium 啟動預覽的嘗試次數。",
   playlistPreviews: "播放清單預覽",
-  playlistPreviewsKeptReady: "預載清單預覽",
-  retriesPerLoadingStep: "各載入步驟重試次數",
+  playlistPreviewsKeptReady: "保留待播預覽",
+  playlistPreviewsKeptReadyHelp: "保留最近準備完成的 1–3 個播放清單預覽 30 秒，之後點擊時可更快開始。",
+  retriesPerLoadingStep: "每步最多嘗試次數",
+  retriesPerLoadingStepHelp: "此上限分別套用到下方每個步驟。",
   playlistLoadingTimeouts: "播放清單載入逾時",
   preparePreview: "準備預覽",
   startPlayer: "啟動播放器",
   loadVideo: "載入影片",
-  preparePreviewTimeout: "準備預覽逾時",
-  startPlayerTimeout: "啟動播放器逾時",
-  loadVideoTimeout: "載入影片逾時",
-  restoreAllDefaults: "全部恢復預設值",
-  restoreAllDefaultsTitle: "將所有持久化的 Playmium 設定恢復為原始值",
+  preparePreviewTimeout: "搜尋逾時",
+  startPlayerTimeout: "請求逾時",
+  loadVideoTimeout: "回應逾時",
+  preparePreviewTimeoutHelp: "尋找相符的影片。",
+  startPlayerTimeoutHelp: "開始請求預覽資料。",
+  loadVideoTimeoutHelp: "等待 YouTube 回應。",
+  restoreAllDefaults: "重設所有設定",
+  restoreAllDefaultsTitle: "將所有 Playmium 設定恢復為預設值。",
   audioTest: "音訊測試：",
   audioWorks: "聽得到聲音",
   noAudio: "沒有聲音",
   troubleshooting: "疑難排解",
-  autoSaveLogs: "自動儲存紀錄",
-  autoSaveLogsOn: "自動儲存已開啟。",
-  autoSaveLogsOff: "目前紀錄可供下載。",
-  downloadCurrentLog: "下載目前紀錄",
+  autoSaveLogs: "自動儲存診斷紀錄",
+  troubleshootingDescription: "",
+  autoSaveLogsOn: "",
+  autoSaveLogsOff: "",
+  downloadCurrentLog: "下載工作階段紀錄",
+  downloadCurrentLogHelp: "",
   subtitles: "字幕",
   subtitleLanguage: "字幕語言",
   autoTranslate: "自動翻譯",
@@ -330,6 +397,19 @@ const traditionalChinese: PreviewUiCopy = {
   playbackSpeed: "播放速度",
   quality: "畫質",
   videoQuality: "影片畫質",
+  translationOff: "不翻譯",
+  normalPlaybackSpeed: "1×",
+  qualityAuto: "自動",
+  qualityHighest: "最高",
+  waitingForVideo: "等待影片載入",
+  startPreviewForSubtitles: "",
+  startPreviewForQuality: "",
+  subtitlesUnavailable: "",
+  qualityUnavailable: "",
+  qualitySwitching: label => `正在切換至 ${label}…`,
+  qualityStillDifferent: label => `已要求 ${label}；YouTube 仍在提供其他畫質。`,
+  qualityAutomatic: "YouTube 會自動調整畫質。",
+  qualityPlaying: (resolution, status) => `播放中：${resolution}。${status}`,
   on: "開",
   off: "關",
   videoDescriptionAndComments: "影片說明與留言",
@@ -414,7 +494,7 @@ const traditionalChinese: PreviewUiCopy = {
   mutedFeedback: "已靜音",
   startingVideo: "正在啟動影片…",
   retryingPreview: (attempt, total) => `正在重試預覽（${attempt} / ${total}）…`,
-  inlinePreviewControlPanel: "站內預覽控制面板",
+  inlinePreviewControlPanel: "Playmium 控制面板",
   controlPanelSections: "控制面板分頁",
   previewUnavailableNoVideo: "預覽無法使用。YouTube 尚未提供影片。請再試一次或關閉預覽。",
   unavailable: "無法使用",
@@ -430,6 +510,11 @@ const traditionalChinese: PreviewUiCopy = {
       "The preview session ended before this item was prepared.": "此項目準備完成前，預覽工作階段已結束。",
       "YouTube's preview renderer did not become ready.": "YouTube 預覽元件未能準備完成。",
       "Preview preparation was cancelled.": "預覽準備已取消。",
+      "That translation is unavailable for this subtitle track.": "此字幕軌不支援該翻譯語言。",
+      "That subtitle language is no longer available.": "該字幕語言已無法使用。",
+      "YouTube could not update subtitles. Try again.": "YouTube 無法更新字幕，請再試一次。",
+      "That quality is no longer available for this preview.": "此預覽已無法使用該畫質。",
+      "YouTube could not change preview quality. Try again.": "YouTube 無法變更預覽畫質，請再試一次。",
     };
     if (exact[message]) return exact[message];
     if (/^YouTube preview .+ timed out\.$/.test(message)) return "YouTube 預覽逾時。";
@@ -439,7 +524,8 @@ const traditionalChinese: PreviewUiCopy = {
     return message;
   },
   advancedSettings: "進階設定",
-  timeoutDescription: (multiplier, seconds) => `標準逾時的 ${multiplier} 倍；${seconds} 秒`,
+  advancedSettingsIntro: "請謹慎調整。若預覽失敗，請增加逾時時間。",
+  timeoutDescription: (multiplier, seconds) => `預設值的 ${multiplier} 倍；${seconds} 秒`,
   seconds: value => `${value} 秒`,
   attempts: value => `${value} 次嘗試`,
   retries: value => `${value} 次重試`,

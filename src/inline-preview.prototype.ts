@@ -279,8 +279,18 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   }
   const button = (id: string, text: string, active = true) => node("button", { id, ...(active ? { "data-active": "" } : {}) }, text);
   const row = (...children: Node[]) => node("div", { class: "row" }, ...children);
-  const settingRow = (label: string, input: Node, output: Node, labelId = "") => row(node("label", {},
-    node("span", { class: "setting-label", ...(labelId ? { id: labelId } : {}) }, label), input, output));
+  const settingsHelp = (id: string, text: string) => node("span", {
+    id, class: "settings-help", role: "note", tabindex: "0",
+    "aria-label": text, "data-tooltip": text,
+  }, "i");
+  const settingRow = (label: string, input: Node, output: Node, labelId = "", help = "") => {
+    const labelNode = node("span", {
+      class: `setting-label${help ? " settings-text-help" : ""}`,
+      ...(labelId ? { id: labelId } : {}),
+      ...(help ? { tabindex: "0", "aria-description": help, "data-tooltip": help } : {}),
+    }, label);
+    return row(node("label", {}, labelNode, input, output));
+  };
   function icon(pathData: string, className = "", fill = false) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("class", className);
@@ -343,25 +353,26 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const speaker = node("button", { id: "speaker", "data-active": "", "data-muted": "false", "aria-label": "Mute", "aria-keyshortcuts": "M" },
     speakerIcon, node("span", { class: "sound-tooltip", "aria-hidden": "true" }, node("span", { id: "speaker-tip" }, "Mute"), node("kbd", {}, "M")));
   const speed = node("select", { id: "speed", "data-active": "", "aria-label": "Playback speed" },
-    ...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => node("option", rate === 1 ? { selected: "" } : {}, String(rate))));
-  const playlistRetentionInput = node("select", { id: "playlist-retention-capacity", "aria-label": "Preloaded playlist previews",
+    ...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => node("option",
+      rate === 1 ? { value: String(rate), selected: "" } : { value: String(rate) }, `${rate}×`)));
+  const playlistRetentionInput = node("select", { id: "playlist-retention-capacity", "aria-label": "Previews kept ready",
     "aria-valuetext": `${playlistPreviewRetentionCapacity} saved preview` },
     ...[1, 2, 3].map(capacity => node("option", capacity === playlistPreviewRetentionCapacity
       ? { value: String(capacity), selected: "" } : { value: String(capacity) }, String(capacity))));
   const previewStartupTimeoutInput = node("input", { id: "preview-startup-timeout", type: "range", min: "2", max: "15", step: "1",
-    value: String(previewStartupTimeoutSeconds), "aria-label": "Preview startup timeout", "aria-valuetext": `${previewStartupTimeoutSeconds} seconds` });
+    value: String(previewStartupTimeoutSeconds), "aria-label": "Attempt timeout", "aria-valuetext": `${previewStartupTimeoutSeconds} seconds` });
   const previewStartupTimeoutValue = node("output", { id: "preview-startup-timeout-value", for: "preview-startup-timeout" }, `${previewStartupTimeoutSeconds} s`);
   const previewStartupAttemptsInput = node("input", { id: "preview-startup-attempts", type: "range", min: "1", max: "3", step: "1",
-    value: String(previewStartupAttempts), "aria-label": "Preview startup attempts", "aria-valuetext": `${previewStartupAttempts} attempts` });
+    value: String(previewStartupAttempts), "aria-label": "Max attempts", "aria-valuetext": `${previewStartupAttempts} attempts` });
   const previewStartupAttemptsValue = node("output", { id: "preview-startup-attempts-value", for: "preview-startup-attempts" }, String(previewStartupAttempts));
-  const playlistStageRetryLimitInput = node("input", { id: "playlist-stage-retry-limit", type: "range", min: "0", max: "3", step: "1",
-    value: String(playlistStageRetryLimit), "aria-label": "Retries per loading step", "aria-valuetext": `${playlistStageRetryLimit} retries` });
-  const playlistStageRetryLimitValue = node("output", { id: "playlist-stage-retry-limit-value", for: "playlist-stage-retry-limit" }, String(playlistStageRetryLimit));
+  const playlistStageRetryLimitInput = node("input", { id: "playlist-stage-retry-limit", type: "range", min: "1", max: "4", step: "1",
+    value: String(playlistStageRetryLimit + 1), "aria-label": "Max attempts/step", "aria-valuetext": `${playlistStageRetryLimit + 1} attempts` });
+  const playlistStageRetryLimitValue = node("output", { id: "playlist-stage-retry-limit-value", for: "playlist-stage-retry-limit" }, String(playlistStageRetryLimit + 1));
   const playlistTimeoutInputs = {} as Record<PlaylistBrokerStage, HTMLInputElement>;
   const playlistTimeoutValues = {} as Record<PlaylistBrokerStage, {
     multiplier: HTMLSpanElement; seconds: HTMLSpanElement;
   }>;
-  const playlistTimeoutRow = (stage: PlaylistBrokerStage, label: string, accessibleLabel: string) => {
+  const playlistTimeoutRow = (stage: PlaylistBrokerStage, label: string, accessibleLabel: string, help: string) => {
     const id = `playlist-${stage}-timeout-multiplier`;
     const multiplier = playlistBrokerTimeoutMultipliers[stage];
     const input = node("input", { id, type: "range", min: String(minimumPlaylistBrokerTimeoutMultiplier),
@@ -372,28 +383,29 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const output = node("output", { id: `${id}-value`, for: id, class: "playlist-timeout-output" }, multiplierValue, secondsValue);
     playlistTimeoutInputs[stage] = input;
     playlistTimeoutValues[stage] = { multiplier: multiplierValue, seconds: secondsValue };
-    return settingRow(label, input, output, `playlist-${stage}-timeout-label`);
+    return settingRow(label, input, output, `playlist-${stage}-timeout-label`, help);
   };
   const uiLanguageSelect = node("select", { id: "ui-language", "aria-label": "Interface language" },
     node("option", { value: "en" }, "English"), node("option", { value: "zh-TW" }, "繁體中文"));
-  const logAutoSaveInput = node("input", { id: "auto-save-logs", type: "checkbox", "aria-label": "Auto-save logs" });
+  const logAutoSaveInput = node("input", { id: "auto-save-logs", type: "checkbox", "aria-label": "Auto-save diagnostic logs" });
   const downloadLogButton = node("button", { id: "export", type: "button" },
     icon("M12 3v12 M7 10l5 5 5-5 M5 17v3h14v-3"),
-    node("span", { id: "download-current-log-label" }, "Download current log"));
+    node("span", { id: "download-current-log-label" }, "Download session log"));
   const videoIdSearchButton = node("button", { id: "video-id-search", type: "button", "aria-pressed": String(!urlSearchEnabled) }, "Video ID");
   const urlSearchButton = node("button", { id: "url-search", type: "button", "aria-pressed": String(urlSearchEnabled) }, "Full URL");
   const searchModeButtons = node("div", { class: "search-mode-buttons", role: "group", "aria-labelledby": "url-search-label" },
     videoIdSearchButton, urlSearchButton);
-  const restoreDefaultsButton = node("button", { id: "restore-defaults", type: "button",
-    title: "Restore every persistent Playmium setting to its original value" }, "Restore all defaults");
+  const restoreDefaultsButton = node("button", { id: "restore-defaults", type: "button", class: "settings-text-help",
+    "aria-description": "Restores all Playmium settings to their defaults.",
+    "data-tooltip": "Restores all Playmium settings to their defaults." }, "Reset all settings");
   const youtubeControlsTab = node("button", { id: "youtube-tab", type: "button", role: "tab",
     "aria-selected": "true", "aria-controls": "youtube-panel" }, "YouTube");
   const playmiumTab = node("button", { id: "playmium-tab", type: "button", role: "tab", tabindex: "-1",
     "aria-selected": "false", "aria-controls": "playmium-panel" }, "Playmium");
-  shadow.append(panelStyle, node("section", { id: "controls", hidden: "", "aria-label": "Inline Preview control panel" },
-    node("header", {}, node("strong", { id: "control-panel-title" }, "Control panel"), node("button", { id: "collapse", "aria-label": "Close settings", "aria-expanded": "true", "data-tooltip": "Close settings" }, "×")),
+  shadow.append(panelStyle, node("section", { id: "controls", hidden: "", "aria-label": "Playmium control panel" },
+    node("header", {}, node("strong", { id: "control-panel-title" }, "Control panel"), node("button", { id: "collapse", "aria-label": "Close control panel", "aria-expanded": "true", "data-tooltip": "Close control panel" }, "×")),
     node("div", { id: "body" },
-      node("div", { id: "control-tabs", role: "tablist", "aria-label": "Control panel sections" }, youtubeControlsTab, playmiumTab),
+      node("div", { id: "control-tabs", role: "tablist", "aria-label": "Control panel tabs" }, youtubeControlsTab, playmiumTab),
       node("div", { id: "progress-display", hidden: "" },
         node("input", { id: "progress", "data-active": "", type: "range", min: "0", max: "1", step: "0.1", value: "0", "aria-label": "Video progress" }),
         node("div", { id: "transport" }, playlistPreviousButton, playButton, playlistNextButton,
@@ -410,8 +422,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         row(node("label", {}, node("span", { id: "quality-label" }, "Quality"), node("select", { id: "quality", "aria-label": "Video quality", disabled: "" }))),
         node("p", {}, node("small", { id: "quality-status", role: "status" }))),
       node("div", { id: "playmium-panel", role: "tabpanel", "aria-labelledby": "playmium-tab", hidden: "" },
-        node("div", { class: "preview-mode-card" }, node("strong", { id: "preview-mode-label" }, "Inline video previews"),
-          node("button", { id: "enable", class: "preview-toggle", role: "switch", "aria-label": "Enable inline video previews", "aria-checked": "false" },
+        node("div", { class: "preview-mode-card" }, node("strong", { id: "preview-mode-label" }, "Enable previews"),
+          node("button", { id: "enable", class: "preview-toggle", role: "switch", "aria-label": "Enable previews", "aria-checked": "false" },
             node("span", { class: "toggle-switch", "aria-hidden": "true" }, node("span", { class: "toggle-knob" })),
             node("span", { id: "enabled-state", "aria-hidden": "true" }, "Off"))),
         node("div", { class: "language-row" }, node("label", {},
@@ -419,29 +431,36 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         node("p", { id: "message", role: "status" }),
         node("div", { class: "settings-group" },
           node("div", { class: "preview-mode-card search-mode-card" },
-            node("strong", { id: "url-search-label" }, "Preview search"), searchModeButtons)),
+            node("strong", { id: "url-search-label", class: "settings-text-help", tabindex: "0", "data-tooltip-lines": "2",
+              "aria-description": "Choose how Playmium finds playlist previews. Full video URL is recommended.",
+              "data-tooltip": "Choose how Playmium finds playlist previews. Full video URL is recommended." }, "Search with"), searchModeButtons)),
         node("div", { class: "settings-group" },
           node("h3", { id: "preview-startup-heading" }, "Preview startup"),
-          settingRow("Preview startup timeout", previewStartupTimeoutInput, previewStartupTimeoutValue, "preview-startup-timeout-label"),
-          settingRow("Preview startup attempts", previewStartupAttemptsInput, previewStartupAttemptsValue, "preview-startup-attempts-label")),
+          settingRow("Max attempts", previewStartupAttemptsInput, previewStartupAttemptsValue, "preview-startup-attempts-label",
+            "Limits how many times Playmium tries to start a preview."),
+          settingRow("Attempt timeout", previewStartupTimeoutInput, previewStartupTimeoutValue, "preview-startup-timeout-label",
+            "Limits how long each startup attempt may take.")),
         node("div", { class: "settings-group" },
           node("h3", { id: "playlist-previews-heading" }, "Playlist previews"),
-          row(node("label", {}, node("span", { class: "setting-label", id: "playlist-retention-label" }, "Preloaded playlist previews"), playlistRetentionInput)),
-          settingRow("Retries per loading step", playlistStageRetryLimitInput, playlistStageRetryLimitValue, "playlist-retries-label"),
-          playlistTimeoutRow("starting", "Prepare preview timeout", "Prepare preview timeout"),
-          playlistTimeoutRow("ready", "Start player timeout", "Start player timeout"),
-          playlistTimeoutRow("request", "Load video timeout", "Load video timeout")),
+          row(node("label", {}, node("span", { class: "setting-label", id: "playlist-retention-label" }, "Previews kept ready"), playlistRetentionInput)),
+          settingRow("Max attempts/step", playlistStageRetryLimitInput, playlistStageRetryLimitValue, "playlist-retries-label",
+            "Applies this limit to each step below."),
+          playlistTimeoutRow("starting", "Search timeout", "Search timeout", "Finds the matching video."),
+          playlistTimeoutRow("ready", "Request timeout", "Request timeout", "Starts the preview data request."),
+          playlistTimeoutRow("request", "Response timeout", "Response timeout", "Waits for YouTube’s response.")),
         node("div", { class: "restore-row" }, restoreDefaultsButton),
         node("p", { id: "shortcut-help" }, node("small", {}, "Drag the video to move. C subtitles; F fullscreen; Esc leaves fullscreen or closes the floating preview. Click × or outside to close. K / Space play/pause; arrows seek; M mute; Alt+P settings.")),
         row(node("span", { id: "audio-test-label" }, "Audio test:"), button("heard", "Audio works"), button("silent", "No audio")),
         node("p", { id: "audio" }),
         node("details", { id: "troubleshooting" }, node("summary", { id: "troubleshooting-label" }, "Troubleshooting"),
           node("div", { class: "troubleshooting-content" },
+            node("small", { id: "troubleshooting-description" }, ""),
             node("label", { class: "troubleshooting-toggle" },
-              node("span", { id: "auto-save-logs-label" }, "Auto-save logs"),
+              node("span", { id: "auto-save-logs-label" }, "Auto-save diagnostic logs"),
               logAutoSaveInput),
-            node("small", { id: "debug-log-status", role: "status" }, "Current log is available for download."),
+            node("small", { id: "debug-log-status", role: "status" }, ""),
             downloadLogButton,
+            node("small", { id: "download-current-log-help" }, ""),
             node("pre", { id: "state", hidden: "" })))),
     ),
   ));
@@ -490,18 +509,30 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #playmium-actions{display:grid;gap:6px;margin-top:1px}
     .panel-nav-button{width:100%;min-height:35px;padding:6px 12px;background:transparent;border-color:#4f829e;color:#dce5ee;text-align:center}
     .panel-nav-button:hover,.panel-nav-button:focus-visible{background:#5eead40a;border-color:#78b9c7}
-    #advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px}
+    #advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}
     #advanced-settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;border-bottom:1px solid #ffffff1c}
     #advanced-settings-header strong{font-size:16px}
+    #advanced-settings-title-group{display:flex;align-items:center;gap:9px}
     #advanced-settings-close{display:grid;place-items:center;width:34px;height:34px;padding:0;background:transparent;border:0;color:#aeb9c7;font-size:18px}
     #advanced-settings-close:hover,#advanced-settings-close:focus-visible{background:transparent;border:0;color:#fff;outline:0}
     #advanced-settings>.settings-group{margin-top:14px;padding-top:14px}
-    #advanced-settings-header + .settings-group{border-top:0;margin-top:12px;padding-top:0}
+    #advanced-settings>.settings-group-first{border-top:0;margin-top:12px;padding-top:0}
     #advanced-settings .search-mode-card{min-height:48px;margin:8px 0 0;padding:8px 12px;background:#ffffff05;border-color:#ffffff20}
-    #advanced-settings .settings-group h3{color:#73aeb0;font-size:13px;font-weight:650}
+    #advanced-settings .settings-group h3{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#73aeb0;font-size:13px;font-weight:650}
     #advanced-settings .settings-group>.row{margin-top:11px}
     #advanced-settings .settings-group>.row>label{display:grid;grid-template-columns:minmax(230px,1fr) 164px 122px;align-items:center;gap:12px;width:100%;white-space:nowrap}
     #advanced-settings .setting-label{min-width:0}
+    .settings-help{position:relative;z-index:2;display:inline-grid;place-items:center;flex:0 0 19px;width:19px;height:19px;border:1px solid #53718e;border-radius:50%;background:#1b2b3b;color:#9fd4ff;font:700 11px/1 system-ui;cursor:help}
+    .settings-help:hover,.settings-help:focus-visible,.settings-help[aria-expanded=true]{border-color:#75d9ff;color:#dff4ff;outline:0;box-shadow:0 0 0 2px #63d5ff2b}
+    .settings-text-help{width:max-content;max-width:100%;border-radius:4px;cursor:help;text-decoration:underline dotted transparent;text-underline-offset:4px;transition:color .12s,text-decoration-color .12s,background .12s}
+    .settings-text-help:hover,.settings-text-help:focus-visible,.settings-text-help[aria-expanded=true]{color:#eafffb;text-decoration-color:#65d7c8;outline:0;background:#5eead40b}
+    #settings-tooltip{position:absolute;z-index:20;width:230px;max-width:calc(100% - 32px);padding:10px 12px;border:1px solid #52677b;border-radius:9px;background:#222c38;color:#eef4fa;box-shadow:0 14px 36px #000b;font:400 12px/1.42 system-ui;white-space:normal;pointer-events:none}
+    #settings-tooltip[data-lines="2"]{width:300px;white-space:pre-line}
+    #settings-tooltip::before{content:"";position:absolute;width:9px;height:9px;transform:rotate(45deg);background:#222c38}
+    #settings-tooltip[data-side=right]::before{left:-5px;top:var(--arrow-top,18px);border-left:1px solid #52677b;border-bottom:1px solid #52677b}
+    #settings-tooltip[data-side=left]::before{right:-5px;top:var(--arrow-top,18px);border-right:1px solid #52677b;border-top:1px solid #52677b}
+    #settings-tooltip[data-side=below]::before{top:-5px;left:var(--arrow-left,22px);border-left:1px solid #52677b;border-top:1px solid #52677b}
+    #settings-tooltip[data-side=above]::before{bottom:-5px;left:var(--arrow-left,22px);border-right:1px solid #52677b;border-bottom:1px solid #52677b}
     #advanced-settings .settings-group input[type=range]{width:100%;min-width:0}
     #advanced-settings .settings-group output{text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
     #advanced-settings .settings-group output.playlist-timeout-output{display:grid;grid-template-columns:44px 68px;justify-content:end;column-gap:8px}
@@ -515,10 +546,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #troubleshooting[open] summary{border-bottom:1px solid #ffffff1c}
     #troubleshooting[open] summary::before{transform:rotate(90deg)}
     .troubleshooting-content{display:grid;gap:12px;padding:12px;background:#ffffff03}
+    #troubleshooting-description,#download-current-log-help,#debug-log-status{display:block;color:#9eabb9;font-size:10.5px;font-weight:450;line-height:1.45}
     .troubleshooting-toggle{display:flex;align-items:center;justify-content:space-between;width:100%;gap:16px;color:#dce5ee}
     .troubleshooting-toggle input[type=checkbox]{appearance:none;width:42px;height:23px;flex:0 0 42px;margin:0;border:1px solid #52657b;border-radius:13px;background:radial-gradient(circle at 11px 50%,#c8d2de 0 7px,transparent 8px),#263547;transition:background .18s,border-color .18s}
     .troubleshooting-toggle input[type=checkbox]:checked{border-color:#4dd9e3;background:radial-gradient(circle at calc(100% - 11px) 50%,#fff 0 7px,transparent 8px),#22b8c6}
-    #troubleshooting #debug-log-status{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);clip-path:inset(50%);white-space:nowrap}
+    #troubleshooting #debug-log-status{color:#b8c6d4}
     #troubleshooting #export{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px;margin:0;padding:8px 12px;background:#1976bd17;border-color:#3484c1;color:#e4edf6}
     #troubleshooting #export svg{width:18px;height:18px}
     #troubleshooting #export:hover,#troubleshooting #export:focus-visible{background:#1976bd2b;border-color:#55a5e1}
@@ -526,11 +558,11 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     @container(max-width:760px){#advanced-settings .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 116px;row-gap:6px;white-space:normal}#advanced-settings .setting-label{grid-column:1/-1}#advanced-settings .settings-group input[type=range]{grid-column:1}#advanced-settings .settings-group output{grid-column:2}}
     @media(prefers-reduced-motion:reduce){#controls{transition:none}}
     #controls{z-index:6}section{cursor:default;overscroll-behavior:contain}pre{overscroll-behavior:contain}
-    #caption-status:empty{display:none} p:has(#caption-status:empty){display:none} #quality-status{font-size:11px;color:#91a0b3} details{border-top:1px solid #ffffff14;padding-top:10px;margin-top:12px;color:#aeb9c8} details button{font-size:11px} summary{cursor:pointer;font-size:12px}
+    #caption-status:empty,#quality-status:empty,#troubleshooting-description:empty,#debug-log-status:empty,#download-current-log-help:empty{display:none} p:has(#caption-status:empty),p:has(#quality-status:empty){display:none} #quality-status{font-size:11px;color:#91a0b3} details{border-top:1px solid #ffffff14;padding-top:10px;margin-top:12px;color:#aeb9c8} details button{font-size:11px} summary{cursor:pointer;font-size:12px}
     #progress-display{position:absolute;inset:auto 0 0;padding:34px 14px 8px;border-radius:0;background:linear-gradient(transparent,#000d);z-index:3;pointer-events:auto}
     #progress{display:block;height:4px;width:100%;margin:0 0 8px;accent-color:#5eead4;cursor:pointer} #transport{display:flex;align-items:center;gap:5px}.transport-spacer{flex:1} #time{font-size:12px;white-space:nowrap;margin:0 6px;color:#f6f7f9}
     .player-button,#speaker{position:relative;display:grid;place-items:center;width:36px;height:36px;padding:7px;border:0;border-radius:50%;background:transparent;color:white;flex-shrink:0;cursor:pointer}
-    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}#playlist-previous:disabled,#playlist-next:disabled{opacity:.35;cursor:default}#playlist-previous:disabled:hover,#playlist-next:disabled:hover{background:transparent}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}
+    .player-button:hover,.player-button:focus-visible,#speaker:hover{background:#ffffff22}#playlist-previous:disabled,#playlist-next:disabled{opacity:.45;cursor:default}#playlist-previous:disabled:hover,#playlist-next:disabled:hover{background:transparent}.player-button svg{width:23px;height:23px}.player-button[data-playing=true] .icon-play,.player-button[data-playing=false] .icon-pause{display:none} #captions[aria-pressed=true]::before{content:"";position:absolute;bottom:1px;width:19px;height:2px;border-radius:2px;background:#5eead4}
     .player-button::after{content:attr(data-tooltip);position:absolute;bottom:calc(100% + 10px);right:0;white-space:nowrap;background:#20242df5;border:1px solid #ffffff18;border-radius:6px;padding:5px 8px;font:12px/1.4 system-ui;opacity:0;visibility:hidden;pointer-events:none}.player-button:hover::after,.player-button:focus-visible::after{opacity:1;visibility:visible} #playlist-previous::after,#play::after,#playlist-next::after{left:0;right:auto}#fullscreen::after{right:0;left:auto}
     .sound-control{padding:0;background:transparent;gap:0}.sound-control #volume{width:0;opacity:0;margin:0;transition:width .16s,opacity .16s;accent-color:white}.sound-control:hover #volume,.sound-control:focus-within #volume{width:85px;opacity:1;margin:0 8px 0 2px} #speaker svg{width:24px;height:24px}.sound-tooltip{font-size:12px;font-weight:500}
     #top-controls{position:absolute;top:0;left:0;right:0;display:flex;align-items:center;padding:6px 8px;background:linear-gradient(#0008,transparent);z-index:4;pointer-events:none} #drag-handle{flex:1;color:#ffffffb0;font:22px/32px system-ui;text-align:center;cursor:grab;touch-action:none;user-select:none;pointer-events:auto} #drag-handle:active{cursor:grabbing} #release{background:#151922b3;width:32px;height:32px} #release::after{top:calc(100% + 8px);bottom:auto}
@@ -654,19 +686,24 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     node("span", { id: "advanced-settings-label" }, "Advanced settings"));
 
   const advancedSettingsClose = node("button", {
-    id: "advanced-settings-close", type: "button", "aria-label": "Close settings"
+    id: "advanced-settings-close", type: "button", "aria-label": "Close advanced settings"
   }, String.fromCodePoint(0x00D7));
 
   const advancedSettingsView = node("section", { id: "advanced-settings", role: "dialog", "aria-labelledby": "advanced-settings-title", hidden: "" });
+  const advancedSettingsHelp = settingsHelp("advanced-settings-help", "Adjust with care. Increase timeouts if previews fail.");
+  const settingsTooltip = node("div", { id: "settings-tooltip", role: "tooltip", hidden: "" });
   const advancedSettingsHeader = node("div", { id: "advanced-settings-header" },
-    node("strong", { id: "advanced-settings-title" }, "Advanced settings"),
+    node("div", { id: "advanced-settings-title-group" },
+      node("strong", { id: "advanced-settings-title" }, "Advanced settings"), advancedSettingsHelp),
     advancedSettingsClose);
 
   const previewModeCard = shadow.getElementById("preview-mode-label")!.closest<HTMLElement>(".preview-mode-card")!;
   const languageRow = shadow.getElementById("ui-language-label")!.closest<HTMLElement>(".language-row")!;
   const messageNode = shadow.getElementById("message")!;
   const searchGroup = shadow.getElementById("url-search-label")!.closest<HTMLElement>(".settings-group")!;
-  searchGroup.prepend(node("h3", { id: "preview-search-heading" }, "Preview search"));
+  searchGroup.classList.add("settings-group-first");
+  searchGroup.prepend(node("h3", { id: "preview-search-heading" },
+    node("span", { id: "preview-search-heading-label" }, "Playlist preview lookup")));
   const startupGroup = shadow.getElementById("preview-startup-heading")!.closest<HTMLElement>(".settings-group")!;
   const playlistGroup = shadow.getElementById("playlist-previews-heading")!.closest<HTMLElement>(".settings-group")!;
   const playlistRetentionRow = playlistRetentionInput.closest<HTMLElement>(".row")!;
@@ -679,8 +716,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
 
   compactPlaymiumMain.append(
     previewModeCard,
-    playlistRetentionRow,
     languageRow,
+    playlistRetentionRow,
     playmiumActions,
   );
 
@@ -690,6 +727,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     startupGroup,
     playlistGroup,
     restoreRow,
+    settingsTooltip,
   );
 
   playmiumPanelElement.replaceChildren(
@@ -700,8 +738,90 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const element = <T extends HTMLElement>(id: string) => shadow.getElementById(id) as T;
   const infoViewer = createInfoViewer(shadow, () => session, seekTo, pageBridge, previewUiCopy(defaultPreviewUiLanguage));
   const selectControls = createSelectControls(shadow, panel);
+  let activeSettingsTooltipTarget: HTMLElement | null = null;
+
+  function hideSettingsTooltip() {
+    settingsTooltip.hidden = true;
+    if (activeSettingsTooltipTarget) activeSettingsTooltipTarget.setAttribute("aria-expanded", "false");
+    activeSettingsTooltipTarget = null;
+  }
+
+  function showSettingsTooltip(target: HTMLElement) {
+    const tooltipText = target.dataset.tooltip;
+    if (!tooltipText) return hideSettingsTooltip();
+    if (activeSettingsTooltipTarget && activeSettingsTooltipTarget !== target) {
+      activeSettingsTooltipTarget.setAttribute("aria-expanded", "false");
+    }
+    activeSettingsTooltipTarget = target;
+    target.setAttribute("aria-expanded", "true");
+    const twoLines = target.dataset.tooltipLines === "2";
+    settingsTooltip.dataset.lines = twoLines ? "2" : "";
+    settingsTooltip.textContent = twoLines ? tooltipText.replace(/([.!?。！？])\s*/, "$1\n") : tooltipText;
+    settingsTooltip.hidden = false;
+    settingsTooltip.style.left = "0px";
+    settingsTooltip.style.top = "0px";
+    const panelRect = advancedSettingsView.getBoundingClientRect();
+    const targetRect = target.getBoundingClientRect();
+    const tooltipRect = settingsTooltip.getBoundingClientRect();
+    const margin = 16;
+    const gap = 10;
+    const scrollLeft = advancedSettingsView.scrollLeft;
+    const scrollTop = advancedSettingsView.scrollTop;
+    const roomRight = panelRect.right - targetRect.right - margin;
+    const roomLeft = targetRect.left - panelRect.left - margin;
+    const centerX = targetRect.left - panelRect.left + scrollLeft + targetRect.width / 2;
+    const centerY = targetRect.top - panelRect.top + scrollTop + targetRect.height / 2;
+    let side: "right" | "left" | "below" | "above";
+    let left: number;
+    let top: number;
+    if (roomRight >= tooltipRect.width + gap) {
+      side = "right";
+      left = targetRect.right - panelRect.left + scrollLeft + gap;
+      top = centerY - tooltipRect.height / 2;
+    } else if (roomLeft >= tooltipRect.width + gap) {
+      side = "left";
+      left = targetRect.left - panelRect.left + scrollLeft - tooltipRect.width - gap;
+      top = centerY - tooltipRect.height / 2;
+    } else {
+      const below = targetRect.bottom - panelRect.top + scrollTop + gap;
+      const above = targetRect.top - panelRect.top + scrollTop - tooltipRect.height - gap;
+      side = below + tooltipRect.height <= scrollTop + advancedSettingsView.clientHeight - margin ? "below" : "above";
+      left = centerX - tooltipRect.width / 2;
+      top = side === "below" ? below : above;
+    }
+    left = Math.max(scrollLeft + margin, Math.min(left,
+      scrollLeft + advancedSettingsView.clientWidth - tooltipRect.width - margin));
+    top = Math.max(scrollTop + margin, Math.min(top,
+      scrollTop + advancedSettingsView.clientHeight - tooltipRect.height - margin));
+    settingsTooltip.dataset.side = side;
+    settingsTooltip.style.left = `${left}px`;
+    settingsTooltip.style.top = `${top}px`;
+    settingsTooltip.style.setProperty("--arrow-left", `${Math.max(12, Math.min(centerX - left - 4, tooltipRect.width - 22))}px`);
+    settingsTooltip.style.setProperty("--arrow-top", `${Math.max(10, Math.min(centerY - top - 4, tooltipRect.height - 20))}px`);
+  }
+
+  const advancedSettingsTooltipTargets = [
+    advancedSettingsHelp,
+    element("url-search-label"),
+    element("preview-startup-attempts-label"),
+    element("preview-startup-timeout-label"),
+    element("playlist-retries-label"),
+    element("playlist-starting-timeout-label"),
+    element("playlist-ready-timeout-label"),
+    element("playlist-request-timeout-label"),
+    restoreDefaultsButton,
+  ];
+  for (const target of advancedSettingsTooltipTargets) {
+    target.setAttribute("aria-expanded", "false");
+    target.addEventListener("mouseenter", () => showSettingsTooltip(target));
+    target.addEventListener("mouseleave", () => { if (shadow.activeElement !== target) hideSettingsTooltip(); });
+    target.addEventListener("focus", () => showSettingsTooltip(target));
+    target.addEventListener("blur", hideSettingsTooltip);
+  }
+  advancedSettingsView.addEventListener("scroll", hideSettingsTooltip, { passive: true });
 
   function setAdvancedSettingsOpen(open: boolean, focus = true) {
+    hideSettingsTooltip();
     advancedSettingsView.hidden = !open;
     advancedSettingsOpen.setAttribute("aria-expanded", String(open));
     selectControls.close();
@@ -728,6 +848,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   function applyUiLanguage(value: unknown) {
     uiLanguage = normalizePreviewUiLanguage(value);
     const copy = previewUiCopy(uiLanguage);
+    const applySettingsTooltipCopy = (target: HTMLElement, text: string, useAriaLabel = false) => {
+      target.dataset.tooltip = text;
+      target.setAttribute(useAriaLabel ? "aria-label" : "aria-description", text);
+    };
     panel.lang = uiLanguage;
     infoViewer.applyCopy(copy, uiLanguage);
     element("controls").setAttribute("aria-label", copy.inlinePreviewControlPanel);
@@ -785,54 +909,74 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     uiLanguageSelect.value = uiLanguage;
     element("control-panel-title").textContent = copy.controlPanel;
+    element("controls").setAttribute("aria-label", copy.inlinePreviewControlPanel);
+    element("control-tabs").setAttribute("aria-label", copy.controlPanelSections);
     element("advanced-settings-label").textContent = copy.advancedSettings;
     element("advanced-settings-title").textContent = copy.advancedSettings;
-    element("advanced-settings-close").setAttribute("aria-label", copy.closeSettings);
-    element("collapse").setAttribute("aria-label", copy.closeSettings);
-    element("collapse").dataset.tooltip = copy.closeSettings;
+    applySettingsTooltipCopy(advancedSettingsHelp, copy.advancedSettingsIntro, true);
+    element("advanced-settings-close").setAttribute("aria-label", copy.closeAdvancedSettings);
+    element("collapse").setAttribute("aria-label", copy.closeControlPanel);
+    element("collapse").dataset.tooltip = copy.closeControlPanel;
     youtubeControlsTab.textContent = copy.youtube;
+    playmiumTab.textContent = copy.playmium;
     element("preview-mode-label").textContent = copy.inlineVideoPreviews;
-    element("enable").setAttribute("aria-label", copy.enableInlineVideoPreviews);
+    element("enable").setAttribute("aria-label", copy.inlineVideoPreviews);
+    element("enable").setAttribute("aria-description", copy.inlineVideoPreviewsHelp);
+    previewModeCard.title = copy.inlineVideoPreviewsHelp;
     element("ui-language-label").textContent = copy.interfaceLanguage;
     uiLanguageSelect.setAttribute("aria-label", copy.interfaceLanguage);
     uiLanguageSelect.options[0].textContent = copy.english;
     uiLanguageSelect.options[1].textContent = copy.traditionalChinese;
     element("preview-startup-heading").textContent = copy.previewStartup;
-    element("url-search-label").textContent = copy.urlSearch;
-    element("preview-search-heading").textContent = copy.urlSearch;
+    element("url-search-label").textContent = copy.urlSearchMethod;
+    applySettingsTooltipCopy(element("url-search-label"), copy.urlSearchHelp);
+    element("preview-search-heading-label").textContent = copy.urlSearch;
     updateSearchControl();
     element("preview-startup-timeout-label").textContent = copy.previewStartupTimeout;
+    applySettingsTooltipCopy(element("preview-startup-timeout-label"), copy.previewStartupTimeoutHelp);
     previewStartupTimeoutInput.setAttribute("aria-label", copy.previewStartupTimeout);
     element("preview-startup-attempts-label").textContent = copy.previewStartupAttempts;
+    applySettingsTooltipCopy(element("preview-startup-attempts-label"), copy.previewStartupAttemptsHelp);
     previewStartupAttemptsInput.setAttribute("aria-label", copy.previewStartupAttempts);
     element("playlist-previews-heading").textContent = copy.playlistPreviews;
     element("playlist-retention-label").textContent = copy.playlistPreviewsKeptReady;
     playlistRetentionInput.setAttribute("aria-label", copy.playlistPreviewsKeptReady);
+    playlistRetentionInput.setAttribute("aria-description", copy.playlistPreviewsKeptReadyHelp);
+    playlistRetentionRow.title = copy.playlistPreviewsKeptReadyHelp;
     element("playlist-retries-label").textContent = copy.retriesPerLoadingStep;
+    applySettingsTooltipCopy(element("playlist-retries-label"), copy.retriesPerLoadingStepHelp);
     playlistStageRetryLimitInput.setAttribute("aria-label", copy.retriesPerLoadingStep);
-    for (const [stage, label, accessibleLabel] of [
-      ["starting", copy.preparePreviewTimeout, copy.preparePreviewTimeout],
-      ["ready", copy.startPlayerTimeout, copy.startPlayerTimeout],
-      ["request", copy.loadVideoTimeout, copy.loadVideoTimeout],
+    for (const [stage, label, accessibleLabel, help] of [
+      ["starting", copy.preparePreviewTimeout, copy.preparePreviewTimeout, copy.preparePreviewTimeoutHelp],
+      ["ready", copy.startPlayerTimeout, copy.startPlayerTimeout, copy.startPlayerTimeoutHelp],
+      ["request", copy.loadVideoTimeout, copy.loadVideoTimeout, copy.loadVideoTimeoutHelp],
     ] as const) {
       element(`playlist-${stage}-timeout-label`).textContent = label;
+      applySettingsTooltipCopy(element(`playlist-${stage}-timeout-label`), help);
       playlistTimeoutInputs[stage].setAttribute("aria-label", accessibleLabel);
+      playlistTimeoutInputs[stage].setAttribute("aria-description", help);
     }
     restoreDefaultsButton.textContent = copy.restoreAllDefaults;
-    restoreDefaultsButton.title = copy.restoreAllDefaultsTitle;
+    applySettingsTooltipCopy(restoreDefaultsButton, copy.restoreAllDefaultsTitle);
     element("audio-test-label").textContent = copy.audioTest;
     element("heard").textContent = copy.audioWorks;
     element("silent").textContent = copy.noAudio;
     element("troubleshooting-label").textContent = copy.troubleshooting;
+    element("troubleshooting-description").textContent = copy.troubleshootingDescription;
     element("auto-save-logs-label").textContent = copy.autoSaveLogs;
     logAutoSaveInput.setAttribute("aria-label", copy.autoSaveLogs);
     element("download-current-log-label").textContent = copy.downloadCurrentLog;
+    element("download-current-log-help").textContent = copy.downloadCurrentLogHelp;
     element("subtitles-label").textContent = copy.subtitles;
     element("caption-language").setAttribute("aria-label", copy.subtitleLanguage);
     element("auto-translate-label").textContent = copy.autoTranslate;
     element("caption-translation").setAttribute("aria-label", copy.subtitleTranslation);
     element("speed-label").textContent = copy.speed;
     speed.setAttribute("aria-label", copy.playbackSpeed);
+    for (const option of speed.options) {
+      const rate = Number(option.value);
+      option.textContent = rate === 1 ? copy.normalPlaybackSpeed : `${rate}×`;
+    }
     element("quality-label").textContent = copy.quality;
     element("quality").setAttribute("aria-label", copy.videoQuality);
     element("debug-log-status").textContent = autoSaveLogs ? copy.autoSaveLogsOn : copy.autoSaveLogsOff;
@@ -1104,8 +1248,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistNextButton.hidden = !eligible;
     playlistPreviousButton.disabled = !available || !playlist || playlist.currentIndex <= 0;
     playlistNextButton.disabled = !available || !playlist || playlist.currentIndex >= playlist.items.length - 1;
-    playlistPreviousButton.style.opacity = playlistPreviousButton.disabled ? "0.35" : "1";
-    playlistNextButton.style.opacity = playlistNextButton.disabled ? "0.35" : "1";
     playlistPreviousButton.dataset.tooltip = previewUiCopy(uiLanguage).previousPlaylistVideo;
     playlistNextButton.dataset.tooltip = previewUiCopy(uiLanguage).nextPlaylistVideo;
     playlistAutoplayButton.setAttribute("aria-pressed", String(playlistAutoplay));
@@ -1746,19 +1888,24 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     const select = element<HTMLSelectElement>("quality");
     const available = qualityState?.available ?? [];
     const options = ["auto", ...available];
+    const qualityOptionLabel = (quality: string) => quality === "auto" ? previewUiCopy(uiLanguage).qualityAuto
+      : quality === "highres" ? previewUiCopy(uiLanguage).qualityHighest : qualityLabels[quality];
     if ([...select.options].map(o => o.value).join(",") !== options.join(",")) {
-      select.replaceChildren(...options.map(q => node("option", { value: q }, qualityLabels[q])));
+      select.replaceChildren(...options.map(q => node("option", { value: q }, qualityOptionLabel(q))));
+    } else {
+      for (const option of select.options) option.textContent = qualityOptionLabel(option.value);
     }
     select.disabled = !v || !qualityState?.supported || Boolean(session?.qualityChange);
     select.value = qualityState?.requested ?? "auto";
-    const resolution = v?.videoWidth && v.videoHeight ? `${v.videoWidth} × ${v.videoHeight}` : "Waiting for video";
+    const copy = previewUiCopy(uiLanguage);
+    const resolution = v?.videoWidth && v.videoHeight ? `${v.videoWidth} × ${v.videoHeight}` : copy.waitingForVideo;
     const requested = qualityState?.requested;
     const changing = requested && requested !== "auto" && qualityState?.current !== requested;
-    const status = !v ? "Choose a playing preview to select quality." : qualityState?.error ||
-      (!qualityState?.supported ? "Quality selection is unavailable for this preview." : changing ?
-        (Date.now() - qualityState.requestedAt > 15000 ? `${qualityLabels[requested]} requested; YouTube is still delivering a different quality.` : `Switching to ${qualityLabels[requested]}…`) :
-        requested === "auto" ? "YouTube adjusts quality automatically." : "");
-    const statusText = v ? `Playing: ${resolution}. ${status}` : status;
+    const status = !v ? copy.startPreviewForQuality : qualityState?.error ? copy.previewError(qualityState.error) :
+      (!qualityState?.supported ? copy.qualityUnavailable : changing ?
+        (Date.now() - qualityState.requestedAt > 15000 ? copy.qualityStillDifferent(qualityOptionLabel(requested)) : copy.qualitySwitching(qualityOptionLabel(requested))) :
+        requested === "auto" ? copy.qualityAutomatic : "");
+    const statusText = v ? copy.qualityPlaying(resolution, status) : status;
     if (element("quality-status").textContent !== statusText) element("quality-status").textContent = statusText;
   }
   function refreshChapters() {
@@ -1851,7 +1998,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     language.disabled = !active || !captionState?.languageSupported;
     language.value = captionState?.selectedTrack || captionTrackChoice || options[0].id;
     const translate = element<HTMLSelectElement>("caption-translation");
-    const translations = [{ languageCode: "", label: "Off" }, ...(captionState?.translations ?? [])];
+    const copy = previewUiCopy(uiLanguage);
+    const translations = [{ languageCode: "", label: copy.translationOff }, ...(captionState?.translations ?? [])];
     const translationSignature = JSON.stringify(translations);
     if (translate.dataset.options !== translationSignature) {
       translate.replaceChildren(...translations.map(t => node("option", { value: t.languageCode }, t.label)));
@@ -1859,7 +2007,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     translate.disabled = !active || !captionState?.languageSupported || translations.length < 2;
     translate.value = captionState?.enabled ? captionState.translation : captionTranslationChoice;
-    const status = !active ? "" : captionState?.error || (!captionState?.available && captionChoice === null ? "Subtitles are unavailable for this preview." : "");
+    const status = !active ? copy.startPreviewForSubtitles : captionState?.error ? copy.previewError(captionState.error)
+      : !captionState?.available && captionChoice === null ? copy.subtitlesUnavailable : "";
     if (element("caption-status").textContent !== status) element("caption-status").textContent = status;
   }
   function toggleCaptions() {
@@ -2303,18 +2452,20 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   );
   function applyPlaylistStageRetryLimit(value: unknown) {
     playlistStageRetryLimit = normalizePlaylistStageRetryLimit(value);
-    playlistStageRetryLimitInput.value = String(playlistStageRetryLimit);
-    playlistStageRetryLimitInput.setAttribute("aria-valuetext", previewUiCopy(uiLanguage).retries(playlistStageRetryLimit));
-    playlistStageRetryLimitValue.value = String(playlistStageRetryLimit);
+    const attempts = playlistStageRetryLimit + 1;
+    playlistStageRetryLimitInput.value = String(attempts);
+    playlistStageRetryLimitInput.setAttribute("aria-valuetext", previewUiCopy(uiLanguage).attempts(attempts));
+    playlistStageRetryLimitValue.value = String(attempts);
   }
+  const playlistStageRetryLimitFromInput = () => Number(playlistStageRetryLimitInput.value) - 1;
   let playlistStageRetryPreferenceChanged = false;
   playlistStageRetryLimitInput.oninput = () => {
     playlistStageRetryPreferenceChanged = true;
-    applyPlaylistStageRetryLimit(playlistStageRetryLimitInput.value);
+    applyPlaylistStageRetryLimit(playlistStageRetryLimitFromInput());
   };
   playlistStageRetryLimitInput.onchange = () => {
     playlistStageRetryPreferenceChanged = true;
-    applyPlaylistStageRetryLimit(playlistStageRetryLimitInput.value);
+    applyPlaylistStageRetryLimit(playlistStageRetryLimitFromInput());
     void savePlaylistStageRetryLimit(chrome.storage.local, playlistStageRetryLimitKey, playlistStageRetryLimit);
     record(`Playlist retry limit set to ${playlistStageRetryLimit} per stage`);
   };
@@ -2520,7 +2671,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       [previewStartupAttemptsKey]: defaultPreviewStartupAttempts,
       [uiLanguageKey]: defaultPreviewUiLanguage,
     }).then(() => record("All Playmium settings restored to defaults"), () => {
-      restoreDefaultsButton.title = previewUiCopy(uiLanguage).settingsRestoredSaveFailed;
+      element("message").textContent = previewUiCopy(uiLanguage).settingsRestoredSaveFailed;
     }).finally(() => { restoreDefaultsButton.disabled = false; });
   };
   function applyDefaultQuality(): boolean {
