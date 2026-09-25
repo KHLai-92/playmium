@@ -33,7 +33,7 @@ https://github.com/user-attachments/assets/8ba97334-c135-4ef9-9cab-3e3a6a91ed4e
 Open Windows PowerShell, copy the complete command below, and press Enter:
 
 ```powershell
-[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;$w=New-Object Net.WebClient;try{$s=$w.DownloadString('https://github.com/KHLai-92/ExtGuide/releases/download/v1.0.0/ExtGuide-v1.0.0.ps1')}finally{$w.Dispose()};&([scriptblock]::Create($s)) -ManifestUri 'https://github.com/KHLai-92/playmium/releases/latest/download/installer-manifest.json'
+[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12;$w=New-Object Net.WebClient;try{$s=$w.DownloadString('https://github.com/KHLai-92/ExtGuide/releases/download/v1.1.0/ExtGuide-v1.1.0.ps1')}finally{$w.Dispose()};&([scriptblock]::Create($s)) -ManifestUri 'https://github.com/KHLai-92/playmium/releases/latest/download/installer-manifest.json'
 ```
 
 ExtGuide downloads and verifies Playmium, installs it in a stable per-user folder, and guides you through loading the extension in Chrome.
