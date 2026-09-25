@@ -38,7 +38,6 @@ export type PreviewUiCopy = Readonly<{
   startPlayerTimeoutHelp: string;
   loadVideoTimeoutHelp: string;
   restoreAllDefaults: string;
-  restoreAllDefaultsTitle: string;
   audioTest: string;
   audioWorks: string;
   noAudio: string;
@@ -205,7 +204,6 @@ const english: PreviewUiCopy = {
   startPlayerTimeoutHelp: "Starts the preview data request.",
   loadVideoTimeoutHelp: "Waits for YouTube’s response.",
   restoreAllDefaults: "Reset all settings",
-  restoreAllDefaultsTitle: "Restores all Playmium settings to their defaults.",
   audioTest: "Audio test:",
   audioWorks: "Audio works",
   noAudio: "No audio",
@@ -372,7 +370,6 @@ const traditionalChinese: PreviewUiCopy = {
   startPlayerTimeoutHelp: "開始請求預覽資料。",
   loadVideoTimeoutHelp: "等待 YouTube 回應。",
   restoreAllDefaults: "重設所有設定",
-  restoreAllDefaultsTitle: "將所有 Playmium 設定恢復為預設值。",
   audioTest: "音訊測試：",
   audioWorks: "聽得到聲音",
   noAudio: "沒有聲音",

@@ -55,6 +55,16 @@ try {
     "interface language should appear before previews kept ready");
   assert.equal(await page.locator(".toggle-switch").count(), 1,
     "preview mode should use the standard switch treatment");
+  await page.locator("#troubleshooting summary").click();
+  const downloadLog = page.locator("#export");
+  assert.equal(await downloadLog.isDisabled(), false, "manual log download should start enabled");
+  await page.locator("#auto-save-logs").click();
+  assert.equal(await downloadLog.isDisabled(), true, "auto-save should disable manual log download");
+  assert.equal(await downloadLog.evaluate(element => getComputedStyle(element).opacity), "0.45",
+    "disabled download should use the shared disabled opacity");
+  await page.locator("#auto-save-logs").click();
+  assert.equal(await downloadLog.isDisabled(), false, "turning auto-save off should restore manual download");
+  await page.locator("#troubleshooting summary").click();
   await page.locator("#advanced-settings-open").click();
 
   const hostBox = await host.boundingBox();
@@ -80,8 +90,10 @@ try {
   const advancedSizeBeforeHelp = { width: advancedBox.width, height: advancedBox.height };
   assert.equal(await page.locator("#advanced-settings .settings-help").count(), 1,
     "only the Advanced settings header should retain a tooltip icon");
-  assert.equal(await page.locator("#advanced-settings .settings-text-help").count(), 8,
+  assert.equal(await page.locator("#advanced-settings .settings-text-help").count(), 7,
     "every Advanced settings detail should expose its tooltip from text");
+  assert.equal(await page.locator("#restore-defaults[data-tooltip], #restore-defaults[aria-description]").count(), 0,
+    "Reset all settings must not expose a tooltip");
   assert.equal(await page.locator("#advanced-settings .settings-group h3[data-tooltip]").count(), 0,
     "section titles must not expose tooltips");
   await page.locator("#advanced-settings-help").hover();

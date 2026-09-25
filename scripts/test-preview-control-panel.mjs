@@ -91,7 +91,7 @@ test("Playmium exposes a persistent restore-all-defaults action", () => {
   assert.ok(source.includes("[uiLanguageKey]: defaultPreviewUiLanguage"));
 });
 
-test("troubleshooting presents independent auto-save and current-log download controls", () => {
+test("troubleshooting disables current-log download while auto-save is on", () => {
   assert.ok(source.includes('"Auto-save diagnostic logs"'));
   assert.ok(source.includes('"Download session log"'));
   assert.ok(source.includes('id: "troubleshooting-description"'));
@@ -106,6 +106,7 @@ test("troubleshooting presents independent auto-save and current-log download co
   assert.ok(source.includes('id: "playmium-actions"'));
   assert.ok(source.includes('#troubleshooting #export{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px'));
   assert.ok(source.includes("diagnosticSession.setAutoSave(value)"));
+  assert.ok(source.includes("downloadLogButton.disabled = value"));
   assert.ok(source.includes("const report = diagnosticSession.exportCurrent()"));
   assert.doesNotMatch(source, /element\("export"\)\.onclick[\s\S]{0,800}applyLogAutoSave/,
     "manual download must not change the auto-save switch");
@@ -127,6 +128,8 @@ test("reference control panel keeps equal tab dimensions and contained text-trig
   assert.ok(source.includes('#settings-tooltip[data-lines="2"]{width:300px;white-space:pre-line}'));
   assert.ok(source.includes('"data-tooltip-lines": "2"'));
   assert.ok(source.includes('"Applies this limit to each step below."'));
+  assert.equal(source.includes("restoreAllDefaultsTitle"), false);
+  assert.equal(source.includes('id: "restore-defaults", type: "button", class: "settings-text-help"'), false);
   assert.equal(source.includes("videoIdSearchButton.title = copy.urlSearchHelp"), false);
   assert.equal(source.includes("urlSearchButton.title = copy.urlSearchHelp"), false);
   assert.ok(source.includes("#advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}"));

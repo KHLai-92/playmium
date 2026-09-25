@@ -395,9 +395,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const urlSearchButton = node("button", { id: "url-search", type: "button", "aria-pressed": String(urlSearchEnabled) }, "Full URL");
   const searchModeButtons = node("div", { class: "search-mode-buttons", role: "group", "aria-labelledby": "url-search-label" },
     videoIdSearchButton, urlSearchButton);
-  const restoreDefaultsButton = node("button", { id: "restore-defaults", type: "button", class: "settings-text-help",
-    "aria-description": "Restores all Playmium settings to their defaults.",
-    "data-tooltip": "Restores all Playmium settings to their defaults." }, "Reset all settings");
+  const restoreDefaultsButton = node("button", { id: "restore-defaults", type: "button" }, "Reset all settings");
   const youtubeControlsTab = node("button", { id: "youtube-tab", type: "button", role: "tab",
     "aria-selected": "true", "aria-controls": "youtube-panel" }, "YouTube");
   const playmiumTab = node("button", { id: "playmium-tab", type: "button", role: "tab", tabindex: "-1",
@@ -953,7 +951,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       playlistTimeoutInputs[stage].setAttribute("aria-description", help);
     }
     restoreDefaultsButton.textContent = copy.restoreAllDefaults;
-    applySettingsTooltipCopy(restoreDefaultsButton, copy.restoreAllDefaultsTitle);
     element("audio-test-label").textContent = copy.audioTest;
     element("heard").textContent = copy.audioWorks;
     element("silent").textContent = copy.noAudio;
@@ -2535,6 +2532,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     if (!value && autoSaveLogs) scrollDiagnostics.flush(playlistScrollSnapshot());
     autoSaveLogs = value;
     logAutoSaveInput.checked = value;
+    downloadLogButton.disabled = value;
     diagnosticSession.setAutoSave(value);
     element("debug-log-status").textContent = value
       ? previewUiCopy(uiLanguage).autoSaveLogsOn

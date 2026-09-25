@@ -41,7 +41,7 @@ test("control panel copy is precise and fully localized", () => {
   assert.equal(english.preparePreviewTimeoutHelp, "Finds the matching video.");
   assert.equal(english.startPlayerTimeoutHelp, "Starts the preview data request.");
   assert.equal(english.loadVideoTimeoutHelp, "Waits for YouTube’s response.");
-  assert.equal(english.restoreAllDefaultsTitle, "Restores all Playmium settings to their defaults.");
+  assert.equal(Object.hasOwn(english, "restoreAllDefaultsTitle"), false);
   assert.equal(chinese.closeControlPanel, "關閉控制面板");
   assert.equal(chinese.closeAdvancedSettings, "關閉進階設定");
   assert.equal(chinese.translationOff, "不翻譯");
