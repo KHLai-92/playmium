@@ -8,9 +8,9 @@ import { playlistPreviewWarmPhaseEvent } from "./preview-playlist";
 function valid(value: unknown): value is SharedPreviewRequest {
   const r = value as Partial<SharedPreviewRequest> | null;
   return !!r && typeof r.videoId === "string" && /^[\w-]{11}$/.test(r.videoId) && typeof r.requestId === "string" &&
-    r.requestId.length > 0 && r.requestId.length <= 100 && typeof r.timeoutMs === "number" && r.timeoutMs >= 2000 && r.timeoutMs <= 15000 &&
+    r.requestId.length > 0 && r.requestId.length <= 100 &&
     (r.actionId === undefined || typeof r.actionId === "string" && r.actionId.length > 0 && r.actionId.length <= 100) &&
-    (r.retryLimit === undefined || Number.isInteger(r.retryLimit) && r.retryLimit >= 0 && r.retryLimit <= 3);
+    (r.retryLimit === undefined || Number.isInteger(r.retryLimit) && r.retryLimit >= 0 && r.retryLimit <= 2);
 }
 export function installSharedPreviewExperiment() {
   if (window !== window.top) return;

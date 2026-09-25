@@ -12,8 +12,8 @@ export type PreviewUiCopy = Readonly<{
   interfaceLanguage: string;
   english: string;
   traditionalChinese: string;
-  previewStartup: string;
-  urlSearch: string;
+  youtubeNativePreviews: string;
+  playmiumAddedPreviews: string;
   urlSearchMethod: string;
   urlSearchHelp: string;
   urlSearchVideoId: string;
@@ -23,7 +23,6 @@ export type PreviewUiCopy = Readonly<{
   previewStartupTimeoutHelp: string;
   previewStartupAttempts: string;
   previewStartupAttemptsHelp: string;
-  playlistPreviews: string;
   playlistPreviewsKeptReady: string;
   retriesPerLoadingStep: string;
   retriesPerLoadingStepHelp: string;
@@ -178,18 +177,17 @@ const english: PreviewUiCopy = {
   interfaceLanguage: "Interface language",
   english: "English",
   traditionalChinese: "繁體中文",
-  previewStartup: "Preview startup",
-  urlSearch: "Playlist preview lookup",
-  urlSearchMethod: "Search with",
-  urlSearchHelp: "Choose how Playmium finds playlist previews. Full video URL is recommended.",
+  youtubeNativePreviews: "YouTube native previews",
+  playmiumAddedPreviews: "Playmium-added previews",
+  urlSearchMethod: "Search method",
+  urlSearchHelp: "Chooses how Playmium finds videos for added previews. Full video URL is recommended.",
   urlSearchVideoId: "Video ID",
   urlSearchFullUrl: "Full URL",
   settingsSaveFailed: "Your change is active on this page, but it couldn’t be saved. Please try again.",
   previewStartupTimeout: "Attempt timeout",
-  previewStartupTimeoutHelp: "Limits how long each startup attempt may take.",
+  previewStartupTimeoutHelp: "Limits how long each attempt may take.",
   previewStartupAttempts: "Max attempts",
   previewStartupAttemptsHelp: "Limits how many times Playmium tries to start a preview.",
-  playlistPreviews: "Playlist previews",
   playlistPreviewsKeptReady: "Previews kept ready",
   retriesPerLoadingStep: "Max attempts/step",
   retriesPerLoadingStepHelp: "Applies this limit to each step below.",
@@ -344,10 +342,10 @@ const traditionalChinese: PreviewUiCopy = {
   interfaceLanguage: "介面語言",
   english: "English",
   traditionalChinese: "繁體中文",
-  previewStartup: "預覽啟動",
-  urlSearch: "播放清單預覽搜尋",
+  youtubeNativePreviews: "YouTube 原生預覽",
+  playmiumAddedPreviews: "Playmium 延伸預覽",
   urlSearchMethod: "搜尋方式",
-  urlSearchHelp: "選擇 Playmium 搜尋播放清單預覽的方式。建議使用完整影片網址。",
+  urlSearchHelp: "選擇 Playmium 尋找補充預覽影片的方式。建議使用完整影片網址。",
   urlSearchVideoId: "影片 ID",
   urlSearchFullUrl: "影片網址",
   settingsSaveFailed: "變更已套用於此頁面，但無法儲存，請再試一次。",
@@ -355,7 +353,6 @@ const traditionalChinese: PreviewUiCopy = {
   previewStartupTimeoutHelp: "每次嘗試的等候時限。",
   previewStartupAttempts: "最多嘗試次數",
   previewStartupAttemptsHelp: "Playmium 最多會嘗試啟動預覽幾次。",
-  playlistPreviews: "播放清單預覽",
   playlistPreviewsKeptReady: "待播保留上限",
   retriesPerLoadingStep: "每階段嘗試上限",
   retriesPerLoadingStepHelp: "此上限會套用到下方各步驟。",

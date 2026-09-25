@@ -14,10 +14,11 @@ import { type PreviewMetadata } from "./preview-metadata";
 import { createInfoViewer } from "./preview-info-viewer";
 import { collectionPlaylistId, isPlaylistId, defaultPlaylistAutoplayEnabled, defaultPlaylistBrokerTimeoutMultipliers,
   defaultPlaylistStageRetryLimit, loadPlaylistAutoplayPreference, loadPlaylistBrokerTimeoutMultipliers,
-  loadPlaylistPreviewRetentionCapacity, loadPlaylistStageRetryLimit, maximumPlaylistBrokerTimeoutMultiplier,
-  minimumPlaylistBrokerTimeoutMultiplier, nextPlaylistAutoplayVideoId, normalizePlaylistBrokerTimeoutMultipliers,
+  loadPlaylistPreviewRetentionCapacity, loadPlaylistStageRetryLimit, nextPlaylistAutoplayVideoId,
+  normalizePlaylistBrokerTimeoutSeconds, normalizePlaylistBrokerTimeoutSettings,
   normalizePlaylistPreviewRetentionCapacity, normalizePlaylistStageRetryLimit, playlistAudioChangeEvent, playlistBrokerClickEvent,
-  playlistAutoplayPreparation, playlistBrokerStageTimeoutMs, playlistBrokerTimeoutMultiplierStep, playlistGeometry,
+  playlistAutoplayPreparation, playlistBrokerTimeoutMultiplierForSeconds,
+  playlistBrokerTimeoutSeconds, playlistBrokerTimeoutSecondsRanges, playlistBrokerTimeoutSecondsStep, playlistGeometry,
   playlistPrefetchCancelEvent, playlistPreviewRetentionCapacity as defaultPlaylistPreviewRetentionCapacity,
   playlistPreviewRetentionEvent, playlistSeedFromLinks, playlistWarmEvent, retainPlaylistPreviews,
   savePlaylistAutoplayPreference, savePlaylistBrokerTimeoutMultipliers, savePlaylistPreviewRetentionCapacity,
@@ -188,7 +189,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let enabled = true;
   let playlistPreviewRetentionCapacity = defaultPlaylistPreviewRetentionCapacity;
   let playlistStageRetryLimit = defaultPlaylistStageRetryLimit;
-  let playlistBrokerTimeoutMultipliers = normalizePlaylistBrokerTimeoutMultipliers(defaultPlaylistBrokerTimeoutMultipliers);
+  let playlistBrokerTimeoutMultipliers = normalizePlaylistBrokerTimeoutSettings(defaultPlaylistBrokerTimeoutMultipliers);
   let playlistAutoplay = defaultPlaylistAutoplayEnabled;
   let previewStartupTimeoutSeconds = defaultPreviewStartupTimeoutSeconds;
   let previewStartupAttempts = defaultPreviewStartupAttempts;
@@ -291,6 +292,17 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }, label);
     return row(node("label", {}, labelNode, input, output));
   };
+  const settingsChoice = (id: string, label: string, values: readonly number[], selected: number) => node("div", {
+    id, class: "settings-choice", role: "group", "aria-label": label,
+  }, ...values.map(value => node("button", {
+    type: "button", "data-value": String(value), "aria-pressed": String(value === selected),
+  }, String(value))));
+  const settingsChoiceValue = (control: HTMLElement) => Number(control.querySelector<HTMLButtonElement>("button[aria-pressed=true]")?.dataset.value);
+  const applySettingsChoice = (control: HTMLElement, value: number) => {
+    for (const button of control.querySelectorAll<HTMLButtonElement>("button[data-value]")) {
+      button.setAttribute("aria-pressed", String(Number(button.dataset.value) === value));
+    }
+  };
   function icon(pathData: string, className = "", fill = false) {
     const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
     svg.setAttribute("viewBox", "0 0 24 24"); svg.setAttribute("aria-hidden", "true"); svg.setAttribute("class", className);
@@ -359,30 +371,25 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     "aria-valuetext": `${playlistPreviewRetentionCapacity} saved preview` },
     ...[1, 2, 3].map(capacity => node("option", capacity === playlistPreviewRetentionCapacity
       ? { value: String(capacity), selected: "" } : { value: String(capacity) }, String(capacity))));
-  const previewStartupTimeoutInput = node("input", { id: "preview-startup-timeout", type: "range", min: "2", max: "15", step: "1",
+  const previewStartupTimeoutInput = node("input", { id: "preview-startup-timeout", type: "range", min: "2", max: "5", step: "0.1",
     value: String(previewStartupTimeoutSeconds), "aria-label": "Attempt timeout", "aria-valuetext": `${previewStartupTimeoutSeconds} seconds` });
   const previewStartupTimeoutValue = node("output", { id: "preview-startup-timeout-value", for: "preview-startup-timeout" }, `${previewStartupTimeoutSeconds} s`);
-  const previewStartupAttemptsInput = node("input", { id: "preview-startup-attempts", type: "range", min: "1", max: "3", step: "1",
-    value: String(previewStartupAttempts), "aria-label": "Max attempts", "aria-valuetext": `${previewStartupAttempts} attempts` });
-  const previewStartupAttemptsValue = node("output", { id: "preview-startup-attempts-value", for: "preview-startup-attempts" }, String(previewStartupAttempts));
-  const playlistStageRetryLimitInput = node("input", { id: "playlist-stage-retry-limit", type: "range", min: "1", max: "4", step: "1",
-    value: String(playlistStageRetryLimit + 1), "aria-label": "Max attempts/step", "aria-valuetext": `${playlistStageRetryLimit + 1} attempts` });
-  const playlistStageRetryLimitValue = node("output", { id: "playlist-stage-retry-limit-value", for: "playlist-stage-retry-limit" }, String(playlistStageRetryLimit + 1));
+  const previewStartupAttemptsControl = settingsChoice("preview-startup-attempts", "Max attempts", [1, 2, 3], previewStartupAttempts);
+  const previewStartupAttemptsSpacer = node("span", { class: "settings-value-spacer", "aria-hidden": "true" });
+  const playlistStageAttemptsControl = settingsChoice("playlist-stage-retry-limit", "Max attempts/step", [1, 2, 3], playlistStageRetryLimit + 1);
+  const playlistStageAttemptsSpacer = node("span", { class: "settings-value-spacer", "aria-hidden": "true" });
   const playlistTimeoutInputs = {} as Record<PlaylistBrokerStage, HTMLInputElement>;
-  const playlistTimeoutValues = {} as Record<PlaylistBrokerStage, {
-    multiplier: HTMLSpanElement; seconds: HTMLSpanElement;
-  }>;
+  const playlistTimeoutValues = {} as Record<PlaylistBrokerStage, HTMLOutputElement>;
   const playlistTimeoutRow = (stage: PlaylistBrokerStage, label: string, accessibleLabel: string, help: string) => {
-    const id = `playlist-${stage}-timeout-multiplier`;
-    const multiplier = playlistBrokerTimeoutMultipliers[stage];
-    const input = node("input", { id, type: "range", min: String(minimumPlaylistBrokerTimeoutMultiplier),
-      max: String(maximumPlaylistBrokerTimeoutMultiplier), step: String(playlistBrokerTimeoutMultiplierStep), value: String(multiplier),
-      "aria-label": accessibleLabel, "aria-valuetext": `${multiplier} times, ${playlistBrokerStageTimeoutMs(stage, playlistBrokerTimeoutMultipliers) / 1000} seconds` });
-    const multiplierValue = node("span", { class: "timeout-multiplier" }, `${multiplier}×`);
-    const secondsValue = node("span", { class: "timeout-seconds" }, "");
-    const output = node("output", { id: `${id}-value`, for: id, class: "playlist-timeout-output" }, multiplierValue, secondsValue);
+    const id = `playlist-${stage}-timeout-seconds`;
+    const seconds = playlistBrokerTimeoutSeconds(stage, playlistBrokerTimeoutMultipliers);
+    const range = playlistBrokerTimeoutSecondsRanges[stage];
+    const input = node("input", { id, type: "range", min: String(range.min), max: String(range.max),
+      step: String(playlistBrokerTimeoutSecondsStep), value: String(seconds),
+      "aria-label": accessibleLabel, "aria-valuetext": `${seconds} seconds` });
+    const output = node("output", { id: `${id}-value`, for: id, class: "playlist-timeout-output" }, `${seconds} s`);
     playlistTimeoutInputs[stage] = input;
-    playlistTimeoutValues[stage] = { multiplier: multiplierValue, seconds: secondsValue };
+    playlistTimeoutValues[stage] = output;
     return settingRow(label, input, output, `playlist-${stage}-timeout-label`, help);
   };
   const uiLanguageSelect = node("select", { id: "ui-language", "aria-label": "Interface language" },
@@ -428,20 +435,19 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
           node("span", { id: "ui-language-label" }, "Interface language"), uiLanguageSelect)),
         node("p", { id: "message", role: "status" }),
         node("div", { class: "settings-group" },
-          node("div", { class: "preview-mode-card search-mode-card" },
-            node("strong", { id: "url-search-label", class: "settings-text-help", tabindex: "0", "data-tooltip-lines": "2",
-              "aria-description": "Choose how Playmium finds playlist previews. Full video URL is recommended.",
-              "data-tooltip": "Choose how Playmium finds playlist previews. Full video URL is recommended." }, "Search with"), searchModeButtons)),
-        node("div", { class: "settings-group" },
-          node("h3", { id: "preview-startup-heading" }, "Preview startup"),
-          settingRow("Max attempts", previewStartupAttemptsInput, previewStartupAttemptsValue, "preview-startup-attempts-label",
+          node("h3", { id: "youtube-native-previews-heading" }, "YouTube native previews"),
+          settingRow("Max attempts", previewStartupAttemptsControl, previewStartupAttemptsSpacer, "preview-startup-attempts-label",
             "Limits how many times Playmium tries to start a preview."),
           settingRow("Attempt timeout", previewStartupTimeoutInput, previewStartupTimeoutValue, "preview-startup-timeout-label",
-            "Limits how long each startup attempt may take.")),
+            "Limits how long each attempt may take.")),
         node("div", { class: "settings-group" },
-          node("h3", { id: "playlist-previews-heading" }, "Playlist previews"),
+          node("h3", { id: "playmium-added-previews-heading" }, "Playmium-added previews"),
+          node("div", { class: "preview-mode-card search-mode-card" },
+            node("strong", { id: "url-search-label", class: "settings-text-help", tabindex: "0", "data-tooltip-lines": "2",
+              "aria-description": "Chooses how Playmium finds videos for added previews. Full video URL is recommended.",
+              "data-tooltip": "Chooses how Playmium finds videos for added previews. Full video URL is recommended." }, "Search method"), searchModeButtons),
           row(node("label", {}, node("span", { class: "setting-label", id: "playlist-retention-label" }, "Previews kept ready"), playlistRetentionInput)),
-          settingRow("Max attempts/step", playlistStageRetryLimitInput, playlistStageRetryLimitValue, "playlist-retries-label",
+          settingRow("Max attempts/step", playlistStageAttemptsControl, playlistStageAttemptsSpacer, "playlist-retries-label",
             "Applies this limit to each step below."),
           playlistTimeoutRow("starting", "Search timeout", "Search timeout", "Finds the matching video."),
           playlistTimeoutRow("ready", "Request timeout", "Request timeout", "Starts the preview data request."),
@@ -495,8 +501,10 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #control-tabs{display:flex;gap:4px;margin:0 -4px 12px;border-bottom:1px solid #ffffff1c}#control-tabs button{flex:1;border:0;border-radius:0;background:transparent;padding:10px 6px;color:#9eabbc;font-size:11px}#control-tabs button[aria-selected=true]{color:#fff;border-bottom:2px solid #5eead4} [role=tabpanel]{min-width:0}
     .preview-mode-card{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:10px 0 4px;padding:10px 12px;border:1px solid #5eead43d;border-radius:10px;background:#5eead40a}.preview-mode-card strong{font-size:13px;font-weight:600}.language-row{margin-top:10px}.language-row label{display:flex;justify-content:space-between;width:100%}.language-row select{width:190px;min-width:0;padding:7px 9px;background:#ffffff0b;border-color:#ffffff1a}.settings-group{border-top:1px solid #ffffff1c;margin-top:12px;padding-top:11px}.settings-group h3,.settings-group h4{margin:0;color:#d9e2ec;font-size:12px;font-weight:650}.settings-group h4{margin-top:13px;color:#9fabb9;font-size:11px}.row{margin-top:10px}.row>label{width:100%;justify-content:space-between;gap:18px}.row select{width:190px;min-width:0;text-overflow:ellipsis;padding:7px 9px;background:#ffffff0b;border-color:#ffffff1a}#playmium-panel .settings-group>.row>label{display:grid;grid-template-columns:minmax(175px,1fr) minmax(75px,1fr) 140px;align-items:center;gap:8px;white-space:nowrap}#playmium-panel .setting-label{min-width:0}#playmium-panel .settings-group input[type=range]{width:100%;min-width:0}#playmium-panel .settings-group output.playlist-timeout-output{display:grid;grid-template-columns:48px 68px;justify-content:end;column-gap:8px;text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}#playmium-panel .timeout-seconds{color:#91a0b3}.restore-row{display:flex;justify-content:flex-end;border-top:1px solid #ffffff1c;margin-top:13px;padding-top:12px}#restore-defaults{background:transparent;border-color:#ffffff2e;color:#d6dee8}#restore-defaults:hover,#restore-defaults:focus-visible{background:#ffffff10;border-color:#ffffff52}#message:empty{display:none}
     #playmium-panel .settings-group>.row>label>output{display:grid;grid-template-columns:48px 68px;justify-content:end;column-gap:8px;text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
-    .search-mode-card{background:transparent;border-color:#ffffff1c}
-    .search-mode-buttons{display:flex;gap:6px;flex-shrink:0}.search-mode-buttons button{min-width:76px;white-space:nowrap}.search-mode-buttons button[aria-pressed=true]{background:#bbf7d0;border-color:#86efac;color:#14532d}
+    .search-mode-card{background:transparent;border:0;border-radius:0}
+    .search-mode-buttons,.settings-choice{display:grid;grid-auto-flow:column;grid-auto-columns:1fr;gap:3px;padding:2px;border:1px solid #414e5d;border-radius:8px;background:#10161d}
+    .search-mode-buttons button,.settings-choice button{min-width:0;min-height:28px;padding:3px 8px;border:0;border-radius:5px;background:transparent;color:#aeb9c7;font-size:12.5px;white-space:nowrap}
+    .search-mode-buttons button[aria-pressed=true],.settings-choice button[aria-pressed=true]{background:#385262;color:#f4fbff;box-shadow:0 0 0 1px #75b9ca inset}
     #controls{width:440px;height:326px}
     #controls:has(#playmium-panel:not([hidden]) #troubleshooting[open]){height:auto;min-height:326px}
     #playmium-main{display:grid;gap:6px}
@@ -507,7 +515,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #playmium-actions{display:grid;gap:6px;margin-top:1px}
     .panel-nav-button{width:100%;min-height:35px;padding:6px 12px;background:transparent;border-color:#4f829e;color:#dce5ee;text-align:center}
     .panel-nav-button:hover,.panel-nav-button:focus-visible{background:#5eead40a;border-color:#78b9c7}
-    #advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}
+    #advanced-settings{z-index:7;right:12px;width:min(560px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}
     #advanced-settings-header{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:64px;border-bottom:1px solid #ffffff1c}
     #advanced-settings-header strong{font-size:16px}
     #advanced-settings-title-group{display:flex;align-items:center;gap:9px}
@@ -515,17 +523,18 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #advanced-settings-close:hover,#advanced-settings-close:focus-visible{background:transparent;border:0;color:#fff;outline:0}
     #advanced-settings>.settings-group{margin-top:14px;padding-top:14px}
     #advanced-settings>.settings-group-first{border-top:0;margin-top:12px;padding-top:0}
-    #advanced-settings .search-mode-card{min-height:48px;margin:8px 0 0;padding:8px 12px;background:#ffffff05;border-color:#ffffff20}
+    #advanced-settings .search-mode-card{display:grid;grid-template-columns:minmax(220px,1fr) 190px 56px;align-items:center;gap:12px;min-height:39px;margin:7px 0 0;padding:0}
+    #advanced-settings .search-mode-buttons{grid-column:2;width:calc(100% - 3px);margin-left:3px}
     #advanced-settings .settings-group h3{display:flex;align-items:center;justify-content:space-between;gap:8px;color:#73aeb0;font-size:13px;font-weight:650}
     #advanced-settings .settings-group>.row{margin-top:11px}
-    #advanced-settings .settings-group>.row>label{display:grid;grid-template-columns:minmax(230px,1fr) 164px 122px;align-items:center;gap:12px;width:100%;white-space:nowrap}
+    #advanced-settings .settings-group>.row>label{display:grid;grid-template-columns:minmax(220px,1fr) 190px 56px;align-items:center;gap:12px;width:100%;white-space:nowrap}
     #advanced-settings .setting-label{min-width:0}
     .settings-help{position:relative;z-index:2;display:inline-grid;place-items:center;flex:0 0 19px;width:19px;height:19px;border:1px solid #53718e;border-radius:50%;background:#1b2b3b;color:#9fd4ff;font:700 11px/1 system-ui;cursor:help}
     .settings-help:hover,.settings-help:focus-visible,.settings-help[aria-expanded=true]{border-color:#75d9ff;color:#dff4ff;outline:0;box-shadow:0 0 0 2px #63d5ff2b}
     .settings-text-help{width:max-content;max-width:100%;border-radius:4px;cursor:help;text-decoration:underline dotted transparent;text-underline-offset:4px;transition:color .12s,text-decoration-color .12s,background .12s}
     .settings-text-help:hover,.settings-text-help:focus-visible,.settings-text-help[aria-expanded=true]{color:#eafffb;text-decoration-color:#65d7c8;outline:0;background:#5eead40b}
     #settings-tooltip{position:absolute;z-index:20;width:230px;max-width:calc(100% - 32px);padding:10px 12px;border:1px solid #52677b;border-radius:9px;background:#222c38;color:#eef4fa;box-shadow:0 14px 36px #000b;font:400 12px/1.42 system-ui;white-space:normal;pointer-events:none}
-    #settings-tooltip[data-lines="2"]{width:300px;white-space:pre-line}
+    #settings-tooltip[data-lines="2"]{width:300px;white-space:normal}
     #settings-tooltip::before{content:"";position:absolute;width:9px;height:9px;transform:rotate(45deg);background:#222c38}
     #settings-tooltip[data-side=right]::before{left:-5px;top:var(--arrow-top,18px);border-left:1px solid #52677b;border-bottom:1px solid #52677b}
     #settings-tooltip[data-side=left]::before{right:-5px;top:var(--arrow-top,18px);border-right:1px solid #52677b;border-top:1px solid #52677b}
@@ -533,8 +542,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #settings-tooltip[data-side=above]::before{bottom:-5px;left:var(--arrow-left,22px);border-right:1px solid #52677b;border-bottom:1px solid #52677b}
     #advanced-settings .settings-group input[type=range]{width:100%;min-width:0}
     #advanced-settings .settings-group output{text-align:right;color:#dbe5ef;font-size:11px;font-variant-numeric:tabular-nums;white-space:nowrap}
-    #advanced-settings .settings-group output.playlist-timeout-output{display:grid;grid-template-columns:44px 68px;justify-content:end;column-gap:8px}
-    #advanced-settings .timeout-seconds{color:#91a0b3}
+    #advanced-settings .settings-choice{grid-column:2;width:calc(100% - 3px);margin-left:3px}
+    #advanced-settings .settings-value-spacer{grid-column:3}
     #troubleshooting{width:100%;margin:0;padding:0;overflow:hidden;border:1px solid #4f829e;border-radius:10px;color:#aeb9c8;background:#07111b24}
     #troubleshooting summary{display:flex;align-items:center;gap:10px;width:100%;min-height:35px;padding:7px 12px;border:0;background:transparent;color:#c8d2de;font-size:12px;font-weight:500;list-style:none}
     #troubleshooting summary::-webkit-details-marker{display:none}
@@ -552,8 +561,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     #troubleshooting #export{display:flex;align-items:center;justify-content:center;gap:9px;width:100%;min-height:38px;margin:0;padding:8px 12px;background:#1976bd17;border-color:#3484c1;color:#e4edf6}
     #troubleshooting #export svg{width:18px;height:18px}
     #troubleshooting #export:hover,#troubleshooting #export:focus-visible{background:#1976bd2b;border-color:#55a5e1}
-    @container(min-width:1160px){#advanced-settings{right:468px}}
-    @container(max-width:760px){#advanced-settings .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 116px;row-gap:6px;white-space:normal}#advanced-settings .setting-label{grid-column:1/-1}#advanced-settings .settings-group input[type=range]{grid-column:1}#advanced-settings .settings-group output{grid-column:2}}
+    @container(min-width:1040px){#advanced-settings{right:468px}}
+    @container(max-width:620px){#advanced-settings .settings-group>.row>label{grid-template-columns:minmax(0,1fr) 56px;row-gap:6px;white-space:normal}#advanced-settings .setting-label{grid-column:1/-1}#advanced-settings .settings-group input[type=range],#advanced-settings .settings-choice{grid-column:1;width:calc(100% - 3px);margin-left:3px}#advanced-settings .settings-group output{grid-column:2}#advanced-settings .settings-value-spacer{grid-column:2}#advanced-settings .search-mode-card{grid-template-columns:minmax(0,1fr) 56px;row-gap:6px}#advanced-settings .search-mode-card strong{grid-column:1/-1}#advanced-settings .search-mode-buttons{grid-column:1;width:calc(100% - 3px);margin-left:3px}}
     @media(prefers-reduced-motion:reduce){#controls{transition:none}}
     #controls{z-index:6}section{cursor:default;overscroll-behavior:contain}pre{overscroll-behavior:contain}
     #caption-status:empty,#quality-status:empty,#troubleshooting-description:empty,#debug-log-status:empty,#download-current-log-help:empty{display:none} p:has(#caption-status:empty),p:has(#quality-status:empty){display:none} #quality-status{font-size:11px;color:#91a0b3} details{border-top:1px solid #ffffff14;padding-top:10px;margin-top:12px;color:#aeb9c8} details button{font-size:11px} summary{cursor:pointer;font-size:12px}
@@ -698,12 +707,9 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const previewModeCard = shadow.getElementById("preview-mode-label")!.closest<HTMLElement>(".preview-mode-card")!;
   const languageRow = shadow.getElementById("ui-language-label")!.closest<HTMLElement>(".language-row")!;
   const messageNode = shadow.getElementById("message")!;
-  const searchGroup = shadow.getElementById("url-search-label")!.closest<HTMLElement>(".settings-group")!;
-  searchGroup.classList.add("settings-group-first");
-  searchGroup.prepend(node("h3", { id: "preview-search-heading" },
-    node("span", { id: "preview-search-heading-label" }, "Playlist preview lookup")));
-  const startupGroup = shadow.getElementById("preview-startup-heading")!.closest<HTMLElement>(".settings-group")!;
-  const playlistGroup = shadow.getElementById("playlist-previews-heading")!.closest<HTMLElement>(".settings-group")!;
+  const nativePreviewGroup = shadow.getElementById("youtube-native-previews-heading")!.closest<HTMLElement>(".settings-group")!;
+  nativePreviewGroup.classList.add("settings-group-first");
+  const addedPreviewGroup = shadow.getElementById("playmium-added-previews-heading")!.closest<HTMLElement>(".settings-group")!;
   const playlistRetentionRow = playlistRetentionInput.closest<HTMLElement>(".row")!;
   const restoreRow = restoreDefaultsButton.closest<HTMLElement>(".restore-row")!;
 
@@ -721,9 +727,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
 
   advancedSettingsView.append(
     advancedSettingsHeader,
-    searchGroup,
-    startupGroup,
-    playlistGroup,
+    nativePreviewGroup,
+    addedPreviewGroup,
     restoreRow,
     settingsTooltip,
   );
@@ -754,7 +759,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     target.setAttribute("aria-expanded", "true");
     const twoLines = target.dataset.tooltipLines === "2";
     settingsTooltip.dataset.lines = twoLines ? "2" : "";
-    settingsTooltip.textContent = twoLines ? tooltipText.replace(/([.!?。！？])\s*/, "$1\n") : tooltipText;
+    settingsTooltip.textContent = tooltipText;
     settingsTooltip.hidden = false;
     settingsTooltip.style.left = "0px";
     settingsTooltip.style.top = "0px";
@@ -923,23 +928,22 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     uiLanguageSelect.setAttribute("aria-label", copy.interfaceLanguage);
     uiLanguageSelect.options[0].textContent = copy.english;
     uiLanguageSelect.options[1].textContent = copy.traditionalChinese;
-    element("preview-startup-heading").textContent = copy.previewStartup;
+    element("youtube-native-previews-heading").textContent = copy.youtubeNativePreviews;
     element("url-search-label").textContent = copy.urlSearchMethod;
     applySettingsTooltipCopy(element("url-search-label"), copy.urlSearchHelp);
-    element("preview-search-heading-label").textContent = copy.urlSearch;
     updateSearchControl();
     element("preview-startup-timeout-label").textContent = copy.previewStartupTimeout;
     applySettingsTooltipCopy(element("preview-startup-timeout-label"), copy.previewStartupTimeoutHelp);
     previewStartupTimeoutInput.setAttribute("aria-label", copy.previewStartupTimeout);
     element("preview-startup-attempts-label").textContent = copy.previewStartupAttempts;
     applySettingsTooltipCopy(element("preview-startup-attempts-label"), copy.previewStartupAttemptsHelp);
-    previewStartupAttemptsInput.setAttribute("aria-label", copy.previewStartupAttempts);
-    element("playlist-previews-heading").textContent = copy.playlistPreviews;
+    previewStartupAttemptsControl.setAttribute("aria-label", copy.previewStartupAttempts);
+    element("playmium-added-previews-heading").textContent = copy.playmiumAddedPreviews;
     element("playlist-retention-label").textContent = copy.playlistPreviewsKeptReady;
     playlistRetentionInput.setAttribute("aria-label", copy.playlistPreviewsKeptReady);
     element("playlist-retries-label").textContent = copy.retriesPerLoadingStep;
     applySettingsTooltipCopy(element("playlist-retries-label"), copy.retriesPerLoadingStepHelp);
-    playlistStageRetryLimitInput.setAttribute("aria-label", copy.retriesPerLoadingStep);
+    playlistStageAttemptsControl.setAttribute("aria-label", copy.retriesPerLoadingStep);
     for (const [stage, label, accessibleLabel, help] of [
       ["starting", copy.preparePreviewTimeout, copy.preparePreviewTimeout, copy.preparePreviewTimeoutHelp],
       ["ready", copy.startPlayerTimeout, copy.startPlayerTimeout, copy.startPlayerTimeoutHelp],
@@ -2446,44 +2450,29 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   function applyPlaylistStageRetryLimit(value: unknown) {
     playlistStageRetryLimit = normalizePlaylistStageRetryLimit(value);
     const attempts = playlistStageRetryLimit + 1;
-    playlistStageRetryLimitInput.value = String(attempts);
-    playlistStageRetryLimitInput.setAttribute("aria-valuetext", previewUiCopy(uiLanguage).attempts(attempts));
-    playlistStageRetryLimitValue.value = String(attempts);
+    applySettingsChoice(playlistStageAttemptsControl, attempts);
   }
-  const playlistStageRetryLimitFromInput = () => Number(playlistStageRetryLimitInput.value) - 1;
   let playlistStageRetryPreferenceChanged = false;
-  playlistStageRetryLimitInput.oninput = () => {
+  playlistStageAttemptsControl.addEventListener("click", event => {
+    const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-value]") : null;
+    if (!button || !playlistStageAttemptsControl.contains(button)) return;
     playlistStageRetryPreferenceChanged = true;
-    applyPlaylistStageRetryLimit(playlistStageRetryLimitFromInput());
-  };
-  playlistStageRetryLimitInput.onchange = () => {
-    playlistStageRetryPreferenceChanged = true;
-    applyPlaylistStageRetryLimit(playlistStageRetryLimitFromInput());
+    applyPlaylistStageRetryLimit(Number(button.dataset.value) - 1);
     void savePlaylistStageRetryLimit(chrome.storage.local, playlistStageRetryLimitKey, playlistStageRetryLimit);
     record(`Playlist retry limit set to ${playlistStageRetryLimit} per stage`);
-  };
+  });
   void loadPlaylistStageRetryLimit(chrome.storage.local, playlistStageRetryLimitKey).then(
     value => { if (!playlistStageRetryPreferenceChanged) applyPlaylistStageRetryLimit(value); },
     () => { if (!playlistStageRetryPreferenceChanged) applyPlaylistStageRetryLimit(defaultPlaylistStageRetryLimit); },
   );
-  function playlistTimeoutView(stage: PlaylistBrokerStage, multiplier: number) {
-    const seconds = playlistBrokerStageTimeoutMs(stage, { ...playlistBrokerTimeoutMultipliers, [stage]: multiplier }) / 1000;
-    const copy = previewUiCopy(uiLanguage);
-    return {
-      description: copy.timeoutDescription(multiplier, seconds),
-      multiplier: `${multiplier}×`,
-      seconds: `(${copy.seconds(seconds)})`,
-    };
-  }
   function applyPlaylistBrokerTimeoutMultipliers(value: unknown) {
-    playlistBrokerTimeoutMultipliers = normalizePlaylistBrokerTimeoutMultipliers(value);
+    playlistBrokerTimeoutMultipliers = normalizePlaylistBrokerTimeoutSettings(value);
     for (const stage of ["starting", "ready", "request"] as const) {
-      const multiplier = playlistBrokerTimeoutMultipliers[stage];
-      const display = playlistTimeoutView(stage, multiplier);
-      playlistTimeoutInputs[stage].value = String(multiplier);
-      playlistTimeoutInputs[stage].setAttribute("aria-valuetext", display.description);
-      playlistTimeoutValues[stage].multiplier.textContent = display.multiplier;
-      playlistTimeoutValues[stage].seconds.textContent = display.seconds;
+      const seconds = playlistBrokerTimeoutSeconds(stage, playlistBrokerTimeoutMultipliers);
+      const display = previewUiCopy(uiLanguage).seconds(seconds);
+      playlistTimeoutInputs[stage].value = String(seconds);
+      playlistTimeoutInputs[stage].setAttribute("aria-valuetext", display);
+      playlistTimeoutValues[stage].value = display;
     }
   }
   let playlistTimeoutPreferenceChanged = false;
@@ -2491,15 +2480,16 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     playlistTimeoutInputs[stage].oninput = () => {
       playlistTimeoutPreferenceChanged = true;
       applyPlaylistBrokerTimeoutMultipliers({ ...playlistBrokerTimeoutMultipliers,
-        [stage]: playlistTimeoutInputs[stage].value });
+        [stage]: playlistBrokerTimeoutMultiplierForSeconds(stage, playlistTimeoutInputs[stage].value) });
     };
     playlistTimeoutInputs[stage].onchange = () => {
       playlistTimeoutPreferenceChanged = true;
       applyPlaylistBrokerTimeoutMultipliers({ ...playlistBrokerTimeoutMultipliers,
-        [stage]: playlistTimeoutInputs[stage].value });
+        [stage]: playlistBrokerTimeoutMultiplierForSeconds(stage, playlistTimeoutInputs[stage].value) });
       void savePlaylistBrokerTimeoutMultipliers(chrome.storage.local, playlistBrokerTimeoutMultipliersKey,
         playlistBrokerTimeoutMultipliers);
-      record(`Playlist ${stage} timeout set to ${playlistTimeoutView(stage, playlistBrokerTimeoutMultipliers[stage]).description}`);
+      record(`Playlist ${stage} timeout set to ${previewUiCopy(uiLanguage).seconds(
+        playlistBrokerTimeoutSeconds(stage, playlistBrokerTimeoutMultipliers))}`);
     };
   }
   applyPlaylistBrokerTimeoutMultipliers(playlistBrokerTimeoutMultipliers);
@@ -2603,9 +2593,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     previewStartupTimeoutInput.value = String(previewStartupTimeoutSeconds);
     previewStartupTimeoutInput.setAttribute("aria-valuetext", copy.seconds(previewStartupTimeoutSeconds));
     previewStartupTimeoutValue.value = copy.seconds(previewStartupTimeoutSeconds);
-    previewStartupAttemptsInput.value = String(previewStartupAttempts);
-    previewStartupAttemptsInput.setAttribute("aria-valuetext", copy.attempts(previewStartupAttempts));
-    previewStartupAttemptsValue.value = String(previewStartupAttempts);
+    applySettingsChoice(previewStartupAttemptsControl, previewStartupAttempts);
     if (persist) {
       void chrome.storage.local.set({
         [previewStartupTimeoutKey]: previewStartupTimeoutSeconds,
@@ -2617,18 +2605,19 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   let previewStartupPreferenceChanged = false;
   previewStartupTimeoutInput.oninput = () => {
     previewStartupPreferenceChanged = true;
-    applyPreviewStartupSettings(previewStartupTimeoutInput.value, previewStartupAttemptsInput.value);
+    applyPreviewStartupSettings(previewStartupTimeoutInput.value, settingsChoiceValue(previewStartupAttemptsControl));
   };
-  previewStartupAttemptsInput.oninput = () => {
+  previewStartupAttemptsControl.addEventListener("click", event => {
+    const button = event.target instanceof Element ? event.target.closest<HTMLButtonElement>("button[data-value]") : null;
+    if (!button || !previewStartupAttemptsControl.contains(button)) return;
     previewStartupPreferenceChanged = true;
-    applyPreviewStartupSettings(previewStartupTimeoutInput.value, previewStartupAttemptsInput.value);
-  };
+    applyPreviewStartupSettings(previewStartupTimeoutInput.value, Number(button.dataset.value), true);
+  });
   const persistPreviewStartupSettings = () => {
     previewStartupPreferenceChanged = true;
-    applyPreviewStartupSettings(previewStartupTimeoutInput.value, previewStartupAttemptsInput.value, true);
+    applyPreviewStartupSettings(previewStartupTimeoutInput.value, settingsChoiceValue(previewStartupAttemptsControl), true);
   };
   previewStartupTimeoutInput.onchange = persistPreviewStartupSettings;
-  previewStartupAttemptsInput.onchange = persistPreviewStartupSettings;
   void chrome.storage.local.get([previewStartupTimeoutKey, previewStartupAttemptsKey]).then(values => {
     if (!previewStartupPreferenceChanged) applyPreviewStartupSettings(values[previewStartupTimeoutKey], values[previewStartupAttemptsKey]);
   }, () => {
@@ -3076,8 +3065,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     thumbnailHover.cancel();
     const intent = thumbnailIntent; thumbnailIntent = null;
     if (!intent || intent.phase === "ready") return;
-    intent.target.dispatchEvent(new CustomEvent(sharedPreviewCancelEvent, { detail: JSON.stringify({ ...intent,
-      timeoutMs: Math.min(15000, Math.max(2000, previewStartupTimeoutSeconds * 1000)) }) }));
+    intent.target.dispatchEvent(new CustomEvent(sharedPreviewCancelEvent, { detail: JSON.stringify(intent) }));
     thumbnailPreparations.delete(intent.target); thumbnailState(intent.target, intent.videoId, "idle");
   }
   function enterThumbnail(event: Event) {
@@ -3095,7 +3083,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       thumbnailPreparations.set(intent.target, intent); intent.phase = "preparing";
       emitPreviewDebugLog("preview.prepare-intent", { surface: "thumbnail", videoId: intent.videoId, actionId: intent.requestId });
       intent.target.dispatchEvent(new CustomEvent(sharedPreviewPrepareEvent, { detail: JSON.stringify({ ...intent,
-        trigger: event.type === "focusin" ? "focus" : "hover", timeoutMs: Math.min(15000, Math.max(2000, previewStartupTimeoutSeconds * 1000)),
+        trigger: event.type === "focusin" ? "focus" : "hover",
         retentionCapacity: playlistPreviewRetentionCapacity, retryLimit: playlistStageRetryLimit, timeoutMultipliers: playlistBrokerTimeoutMultipliers }) }));
     });
   }
@@ -3558,7 +3546,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
       const rect = target.getBoundingClientRect();
       host.dispatchEvent(new CustomEvent(sharedPreviewStartEvent, { detail: JSON.stringify({
         videoId, requestId, actionId: prepared?.requestId ?? requestId,
-        timeoutMs: Math.min(15000, Math.max(2000, previewStartupTimeoutSeconds * 1000)),
         retentionCapacity: playlistPreviewRetentionCapacity, retryLimit: playlistStageRetryLimit,
         timeoutMultipliers: playlistBrokerTimeoutMultipliers,
         rect: { left: rect.left, top: rect.top, width: rect.width, height: rect.height },

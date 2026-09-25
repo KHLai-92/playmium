@@ -3,7 +3,9 @@ export const defaultPreviewStartupAttempts = 3;
 
 export function normalizePreviewStartupTimeoutSeconds(value: unknown): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
-  return Number.isFinite(parsed) ? Math.max(2, Math.min(15, Math.round(parsed))) : defaultPreviewStartupTimeoutSeconds;
+  return Number.isFinite(parsed)
+    ? Math.round(Math.max(2, Math.min(5, parsed)) * 10) / 10
+    : defaultPreviewStartupTimeoutSeconds;
 }
 
 export function normalizePreviewStartupAttempts(value: unknown): number {

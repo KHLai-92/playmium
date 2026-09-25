@@ -12,7 +12,7 @@ import { qualityLabels } from "./preview-quality";
 import { emitPreviewDebugLog } from "./preview-debug-log";
 
 export type PreviewPlaybackRequest = Readonly<{ videoId: string; requestId: string; actionId: string;
-  startedAtMs?: number; timeoutMs?: number; quality?: string; retentionCapacity?: number; retryLimit?: number;
+  startedAtMs?: number; quality?: string; retentionCapacity?: number; retryLimit?: number;
   timeoutMultipliers?: PlaylistBrokerTimeoutMultipliers; rect?: { left: number; top: number; width: number; height: number } }>;
 export type PreviewPlaybackPhase = { phase: "commit" | "playing" | "success"; source?: string;
   quality?: string; responseSource: "broker" };
@@ -29,6 +29,7 @@ type Resource = { wrapper: Player; api?: Api; events: AbortController; observer:
 const resources = new WeakMap<HTMLElement, Resource>();
 const jobs = new WeakMap<HTMLElement, AbortController>();
 const audioChanges = new WeakMap<HTMLVideoElement, number>();
+const newPlayerStartupSafetyTimeoutMs = 5000;
 let sequence = 0;
 
 export function preparePreview(target: HTMLElement, videoId: string,
@@ -142,8 +143,9 @@ export async function previewVideo(host: HTMLElement, request: PreviewPlaybackRe
     if (!response) throw new Error("Preview playback is unavailable for this video.");
     trace("preview.select-response-valid");
     if (!existingPlayer) {
-      // The new-player budget starts after stable broker preparation completes.
-      timer = setTimeout(() => controller.abort(new Error(`YouTube preview ${layer} timed out.`)), request.timeoutMs ?? 3000);
+      // This internal safety limit starts only after the preview data is ready.
+      // Native previews use their separate, user-configurable startup policy.
+      timer = setTimeout(() => controller.abort(new Error(`YouTube preview ${layer} timed out.`)), newPlayerStartupSafetyTimeoutMs);
       layer = "player-definition";
       await abortable(host.ownerDocument.defaultView!.customElements.whenDefined("ytd-player"), signal); check();
       player = host.ownerDocument.createElement("ytd-player") as Player;

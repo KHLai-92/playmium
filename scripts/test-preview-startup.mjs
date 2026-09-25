@@ -8,8 +8,9 @@ test("startup timeout uses the measured three-second default and stays configura
   assert.equal(defaultPreviewStartupTimeoutSeconds, 3);
   assert.equal(normalizePreviewStartupTimeoutSeconds(null), 3);
   assert.equal(normalizePreviewStartupTimeoutSeconds("2"), 2);
-  assert.equal(normalizePreviewStartupTimeoutSeconds("9.6"), 10);
-  assert.equal(normalizePreviewStartupTimeoutSeconds("99"), 15);
+  assert.equal(normalizePreviewStartupTimeoutSeconds("3.14"), 3.1);
+  assert.equal(normalizePreviewStartupTimeoutSeconds("9.6"), 5);
+  assert.equal(normalizePreviewStartupTimeoutSeconds("99"), 5);
 });
 
 test("startup attempt count defaults to and is capped at three", () => {

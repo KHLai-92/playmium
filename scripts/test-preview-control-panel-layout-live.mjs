@@ -71,8 +71,8 @@ try {
   const advancedSettings = page.locator("#advanced-settings");
   const advancedBox = await advancedSettings.boundingBox();
   assert.ok(hostBox && advancedBox, "control panel layout must be measurable");
-  assert.ok(Math.abs(advancedBox.width - 680) <= 1,
-    `advanced settings should match the 680px reference width, got ${advancedBox.width}`);
+  assert.ok(Math.abs(advancedBox.width - 560) <= 1,
+    `advanced settings should use the compact 560px width, got ${advancedBox.width}`);
   assert.equal(await page.locator("#advanced-settings > .settings-group").first().evaluate(element =>
     getComputedStyle(element).borderTopWidth), "0px",
   "the first advanced-settings section must not add a second header divider");
@@ -83,10 +83,50 @@ try {
   const startupTimeoutBox = await page.locator("#preview-startup-timeout").boundingBox();
   assert.ok(startupAttemptsBox && startupTimeoutBox && startupAttemptsBox.y < startupTimeoutBox.y,
     "maximum startup attempts should appear before attempt timeout");
-  assert.deepEqual(await page.locator("#playlist-stage-retry-limit").evaluate(element => ({
-    min: element.getAttribute("min"), max: element.getAttribute("max"), value: element.value,
-  })), { min: "1", max: "4", value: "4" },
-  "the retry setting should expose one through four attempts");
+  assert.deepEqual(await page.locator("#preview-startup-attempts button").evaluateAll(buttons => buttons.map(button => ({
+    value: button.getAttribute("data-value"), pressed: button.getAttribute("aria-pressed"),
+  }))), [
+    { value: "1", pressed: "false" },
+    { value: "2", pressed: "false" },
+    { value: "3", pressed: "true" },
+  ], "native preview attempts should use three exclusive buttons");
+  assert.deepEqual(await page.locator("#playlist-stage-retry-limit button").evaluateAll(buttons => buttons.map(button => ({
+    value: button.getAttribute("data-value"), pressed: button.getAttribute("aria-pressed"),
+  }))), [
+    { value: "1", pressed: "false" },
+    { value: "2", pressed: "false" },
+    { value: "3", pressed: "true" },
+  ], "added-preview attempts should expose one through three attempts");
+  await page.locator('#playlist-stage-retry-limit button[data-value="2"]').click();
+  assert.equal(await page.locator('#playlist-stage-retry-limit button[data-value="2"]').getAttribute("aria-pressed"), "true",
+    "attempt buttons should update immediately");
+  assert.deepEqual(await page.locator("#preview-startup-timeout").evaluate(element => ({
+    min: element.getAttribute("min"), max: element.getAttribute("max"), step: element.getAttribute("step"), value: element.value,
+  })), { min: "2", max: "5", step: "0.1", value: "3" });
+  for (const [stage, expected] of Object.entries({
+    starting: { min: "3", max: "8", step: "0.1", value: "5" },
+    ready: { min: "0.8", max: "2.5", step: "0.1", value: "1.5" },
+    request: { min: "2", max: "6", step: "0.1", value: "4" },
+  })) {
+    assert.deepEqual(await page.locator(`#playlist-${stage}-timeout-seconds`).evaluate(element => ({
+      min: element.getAttribute("min"), max: element.getAttribute("max"), step: element.getAttribute("step"), value: element.value,
+    })), expected, `${stage} timeout should expose its compact seconds range`);
+  }
+  assert.equal(await page.locator("#advanced-settings .playlist-timeout-output").evaluateAll(outputs =>
+    outputs.some(output => output.textContent?.includes(String.fromCharCode(215)))), false,
+  "advanced timeout controls should not show multiplier values");
+  const searchCardStyle = await page.locator("#advanced-settings .search-mode-card").evaluate(element => ({
+    border: getComputedStyle(element).borderTopWidth,
+    background: getComputedStyle(element).backgroundColor,
+  }));
+  assert.equal(searchCardStyle.border, "0px", "Search method should not have an outer frame");
+  assert.equal(searchCardStyle.background, "rgba(0, 0, 0, 0)", "Search method should not have a card background");
+  const stageAttemptsBox = await page.locator("#playlist-stage-retry-limit").boundingBox();
+  const stageTimeoutBox = await page.locator("#playlist-starting-timeout-seconds").boundingBox();
+  assert.ok(stageAttemptsBox && stageTimeoutBox &&
+    Math.abs(stageAttemptsBox.x - stageTimeoutBox.x) <= 2 &&
+    Math.abs(stageAttemptsBox.x + stageAttemptsBox.width - stageTimeoutBox.x - stageTimeoutBox.width) <= 2,
+  `attempt buttons should align to the visible left and right ends of the slider track: ${JSON.stringify({ stageAttemptsBox, stageTimeoutBox })}`);
   const advancedSizeBeforeHelp = { width: advancedBox.width, height: advancedBox.height };
   assert.equal(await page.locator("#advanced-settings .settings-help").count(), 1,
     "only the Advanced settings header should retain a tooltip icon");
@@ -107,17 +147,22 @@ try {
   await page.locator("#url-search-label").hover();
   const searchTooltip = page.locator("#settings-tooltip");
   const searchTooltipBox = await searchTooltip.boundingBox();
-  assert.ok(searchTooltipBox, "Search with tooltip must be visible");
+  assert.ok(searchTooltipBox, "Search method tooltip must be visible");
   assert.equal(await searchTooltip.getAttribute("data-lines"), "2",
-    "Search with tooltip should use its two-line treatment");
-  assert.match(await searchTooltip.textContent(), /\.\nFull video URL is recommended\.$/,
-    "Search with tooltip should break between its two sentences");
+    "Search method tooltip should use its two-line treatment");
+  assert.equal((await searchTooltip.textContent())?.includes("\n"), false,
+    "Search method tooltip should wrap naturally without a forced sentence break");
+  assert.equal(await searchTooltip.evaluate(element => {
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    return range.getClientRects().length;
+  }), 2, "Search method tooltip should occupy exactly two naturally wrapped lines");
   assert.ok(Math.abs(searchTooltipBox.width - 300) <= 1,
-    `Search with tooltip should be only slightly wider, got ${searchTooltipBox.width}px`);
+    `Search method tooltip should be only slightly wider, got ${searchTooltipBox.width}px`);
   assert.ok(searchTooltipBox.x >= advancedBox.x && searchTooltipBox.y >= advancedBox.y &&
     searchTooltipBox.x + searchTooltipBox.width <= advancedBox.x + advancedBox.width &&
     searchTooltipBox.y + searchTooltipBox.height <= advancedBox.y + advancedBox.height,
-  "Search with tooltip must remain inside Advanced settings");
+  "Search method tooltip must remain inside Advanced settings");
   await page.locator("#playlist-starting-timeout-label").hover();
   assert.equal(await searchTooltip.textContent(), "Finds the matching video.");
   const failures = [];
@@ -171,6 +216,7 @@ try {
     "Traditional Chinese main-panel copy should not overflow horizontally");
   await page.locator("#advanced-settings-open").click();
   assert.equal(await page.locator("#url-search-label").textContent(), "搜尋方式");
+  assert.equal(await page.locator("#playmium-added-previews-heading").textContent(), "Playmium 延伸預覽");
   assert.equal(await page.locator("#url-search").textContent(), "影片網址");
   assert.equal(await page.locator("#playlist-retries-label").textContent(), "每階段嘗試上限");
   assert.ok(await page.locator("#advanced-settings").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,

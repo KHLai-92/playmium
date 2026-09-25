@@ -30,13 +30,16 @@ test("timeout accessibility copy explains the independently positioned visual va
 test("control panel copy is precise and fully localized", () => {
   const english = previewUiCopy("en");
   const chinese = previewUiCopy("zh-TW");
-  assert.equal(english.urlSearch, "Playlist preview lookup");
+  assert.equal(english.youtubeNativePreviews, "YouTube native previews");
+  assert.equal(english.playmiumAddedPreviews, "Playmium-added previews");
+  assert.equal(english.urlSearchMethod, "Search method");
+  assert.equal(english.urlSearchHelp, "Chooses how Playmium finds videos for added previews. Full video URL is recommended.");
   assert.equal(english.playlistPreviewsKeptReady, "Previews kept ready");
   assert.equal(english.downloadCurrentLog, "Download session log");
   assert.equal(english.normalPlaybackSpeed, "1×");
   assert.equal(english.retriesPerLoadingStep, "Max attempts/step");
   assert.equal(english.previewStartupAttemptsHelp, "Limits how many times Playmium tries to start a preview.");
-  assert.equal(english.previewStartupTimeoutHelp, "Limits how long each startup attempt may take.");
+  assert.equal(english.previewStartupTimeoutHelp, "Limits how long each attempt may take.");
   assert.equal(english.retriesPerLoadingStepHelp, "Applies this limit to each step below.");
   assert.equal(english.preparePreviewTimeoutHelp, "Finds the matching video.");
   assert.equal(english.startPlayerTimeoutHelp, "Starts the preview data request.");
@@ -46,8 +49,10 @@ test("control panel copy is precise and fully localized", () => {
   assert.equal(chinese.closeAdvancedSettings, "關閉進階設定");
   assert.equal(chinese.youtube, "YouTube");
   assert.equal(chinese.playmium, "Playmium");
-  assert.equal(chinese.urlSearch, "播放清單預覽搜尋");
-  assert.equal(chinese.urlSearchHelp, "選擇 Playmium 搜尋播放清單預覽的方式。建議使用完整影片網址。");
+  assert.equal(chinese.youtubeNativePreviews, "YouTube 原生預覽");
+  assert.equal(chinese.playmiumAddedPreviews, "Playmium 延伸預覽");
+  assert.equal(chinese.urlSearchMethod, "搜尋方式");
+  assert.equal(chinese.urlSearchHelp, "選擇 Playmium 尋找補充預覽影片的方式。建議使用完整影片網址。");
   assert.equal(chinese.urlSearchFullUrl, "影片網址");
   assert.equal(chinese.previewStartupAttemptsHelp, "Playmium 最多會嘗試啟動預覽幾次。");
   assert.equal(chinese.previewStartupTimeout, "單次嘗試逾時");

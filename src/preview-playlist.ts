@@ -21,9 +21,9 @@ export const playlistPreviewRetentionCapacity = 1;
 export const minimumPlaylistPreviewRetentionCapacity = 1;
 export const maximumPlaylistPreviewRetentionCapacity = 3;
 export const playlistPreviewRetentionTtlMs = 30_000;
-export const defaultPlaylistStageRetryLimit = 3;
+export const defaultPlaylistStageRetryLimit = 2;
 export const minimumPlaylistStageRetryLimit = 0;
-export const maximumPlaylistStageRetryLimit = 3;
+export const maximumPlaylistStageRetryLimit = 2;
 export const defaultPlaylistAutoplayEnabled = false;
 export const playlistDrawerRightInset = 12;
 export type PlaylistPreviewTrigger = "hover" | "focus" | "click";
@@ -34,11 +34,16 @@ export const playlistBrokerTimeoutBaselinesMs: Readonly<Record<PlaylistBrokerSta
   ready: 1_500,
   request: 4_000,
 };
-// The 0.5x floor remains above the slowest observed stage timings
-// (1.62s, 0.62s, 0.14s), while 3x allows deliberately conservative recovery.
+export const playlistBrokerTimeoutSecondsRanges: Readonly<Record<PlaylistBrokerStage, Readonly<{ min: number; max: number }>>> = {
+  starting: { min: 3, max: 8 },
+  ready: { min: .8, max: 2.5 },
+  request: { min: 2, max: 6 },
+};
+export const playlistBrokerTimeoutSecondsStep = .1;
+// Multipliers remain an internal transport/storage format so existing saved
+// preferences stay compatible. The control panel exposes bounded seconds.
 export const minimumPlaylistBrokerTimeoutMultiplier = .5;
 export const maximumPlaylistBrokerTimeoutMultiplier = 3;
-export const playlistBrokerTimeoutMultiplierStep = .25;
 export const defaultPlaylistBrokerTimeoutMultipliers: PlaylistBrokerTimeoutMultipliers = {
   starting: 1,
   ready: 1,
@@ -94,7 +99,7 @@ export function normalizePlaylistBrokerTimeoutMultiplier(value: unknown): number
   const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
   if (!Number.isFinite(parsed)) return 1;
   const bounded = Math.min(maximumPlaylistBrokerTimeoutMultiplier, Math.max(minimumPlaylistBrokerTimeoutMultiplier, parsed));
-  return Math.round(bounded / playlistBrokerTimeoutMultiplierStep) * playlistBrokerTimeoutMultiplierStep;
+  return Math.round(bounded * 10_000) / 10_000;
 }
 
 export function normalizePlaylistBrokerTimeoutMultipliers(value: unknown): PlaylistBrokerTimeoutMultipliers {
@@ -108,6 +113,32 @@ export function normalizePlaylistBrokerTimeoutMultipliers(value: unknown): Playl
 
 export function playlistBrokerStageTimeoutMs(stage: PlaylistBrokerStage, multipliers: PlaylistBrokerTimeoutMultipliers): number {
   return Math.round(playlistBrokerTimeoutBaselinesMs[stage] * normalizePlaylistBrokerTimeoutMultiplier(multipliers[stage]));
+}
+
+export function normalizePlaylistBrokerTimeoutSeconds(stage: PlaylistBrokerStage, value: unknown): number {
+  const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : Number.NaN;
+  const fallback = playlistBrokerTimeoutBaselinesMs[stage] / 1000;
+  const range = playlistBrokerTimeoutSecondsRanges[stage];
+  const bounded = Math.min(range.max, Math.max(range.min, Number.isFinite(parsed) ? parsed : fallback));
+  return Math.round(bounded * 10) / 10;
+}
+
+export function playlistBrokerTimeoutMultiplierForSeconds(stage: PlaylistBrokerStage, value: unknown): number {
+  return normalizePlaylistBrokerTimeoutMultiplier(
+    normalizePlaylistBrokerTimeoutSeconds(stage, value) * 1000 / playlistBrokerTimeoutBaselinesMs[stage]);
+}
+
+export function playlistBrokerTimeoutSeconds(stage: PlaylistBrokerStage, multipliers: PlaylistBrokerTimeoutMultipliers): number {
+  return normalizePlaylistBrokerTimeoutSeconds(stage, playlistBrokerStageTimeoutMs(stage, multipliers) / 1000);
+}
+
+export function normalizePlaylistBrokerTimeoutSettings(value: unknown): PlaylistBrokerTimeoutMultipliers {
+  const multipliers = normalizePlaylistBrokerTimeoutMultipliers(value);
+  return {
+    starting: playlistBrokerTimeoutMultiplierForSeconds("starting", playlistBrokerTimeoutSeconds("starting", multipliers)),
+    ready: playlistBrokerTimeoutMultiplierForSeconds("ready", playlistBrokerTimeoutSeconds("ready", multipliers)),
+    request: playlistBrokerTimeoutMultiplierForSeconds("request", playlistBrokerTimeoutSeconds("request", multipliers)),
+  };
 }
 
 export async function loadPlaylistBrokerTimeoutMultipliers(storage: PlaylistPreferenceStorage, key: string) {

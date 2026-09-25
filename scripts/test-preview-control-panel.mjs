@@ -10,8 +10,9 @@ const uiLanguageSource = await readFile("src/preview-ui-language.ts", "utf8");
 const backgroundSource = await readFile("src/preview-debug-log.background.ts", "utf8");
 
 test("control panel URL search switch loads before preparation and persists with restore-all defaults", () => {
-  assert.ok(controls.includes("Playlist preview lookup"));
-  assert.ok(controls.includes("Search with"));
+  assert.ok(controls.includes("YouTube native previews"));
+  assert.ok(controls.includes("Playmium-added previews"));
+  assert.ok(controls.includes("Search method"));
   assert.ok(controls.includes("Full video URL"));
   assert.ok(source.includes('id: "url-search", type: "button"'));
   assert.ok(source.includes("await searchPreference.ready"));
@@ -32,29 +33,25 @@ test("extension action opens Playmium while the in-player gear opens YouTube", (
   assert.ok(source.includes('openControlPanel("playmium")'));
 });
 
-test("Playmium controls use persistent inputs and show multiplier plus actual timeout", () => {
+test("Playmium controls use persistent compact choices and direct timeout seconds", () => {
   assert.ok(controls.includes("Autoplay next playlist video: Off"));
   assert.ok(controls.includes("Max attempts/step"));
   assert.ok(source.includes('node("select", { id: "playlist-retention-capacity"'));
   assert.equal(source.includes('id: "playlist-retention-capacity", type: "range"'), false);
-  assert.ok(source.includes('id: "preview-startup-attempts", type: "range"'));
-  assert.ok(source.includes('id: "playlist-stage-retry-limit", type: "range"'));
-  assert.ok(source.includes('id: "playlist-stage-retry-limit", type: "range", min: "1", max: "4"'));
-  assert.ok(source.includes("const playlistStageRetryLimitFromInput = () => Number(playlistStageRetryLimitInput.value) - 1"));
+  assert.ok(source.includes('settingsChoice("preview-startup-attempts", "Max attempts", [1, 2, 3]'));
+  assert.ok(source.includes('settingsChoice("playlist-stage-retry-limit", "Max attempts/step", [1, 2, 3]'));
+  assert.ok(source.includes("applyPlaylistStageRetryLimit(Number(button.dataset.value) - 1)"));
+  assert.ok(source.includes('id: "preview-startup-timeout", type: "range", min: "2", max: "5", step: "0.1"'));
+  assert.ok(source.includes('const id = `playlist-${stage}-timeout-seconds`'));
+  assert.ok(source.includes("playlistBrokerTimeoutSecondsRanges[stage]"));
+  assert.ok(source.includes("playlistBrokerTimeoutSecondsStep"));
   assert.ok(source.includes('playlistTimeoutRow("starting", "Search timeout", "Search timeout", "Finds the matching video.")'));
   assert.ok(source.includes('playlistTimeoutRow("ready", "Request timeout", "Request timeout", "Starts the preview data request.")'));
   assert.ok(source.includes('playlistTimeoutRow("request", "Response timeout", "Response timeout", "Waits for YouTube’s response.")'));
-  assert.ok(source.includes('class: "timeout-multiplier"'));
-  assert.ok(source.includes('class: "timeout-seconds"'));
   assert.ok(source.includes('class: "playlist-timeout-output"'));
-  assert.ok(source.includes("output.playlist-timeout-output{display:grid"));
-  assert.ok(source.includes(".settings-group>.row>label>output{display:grid"),
-    "all numeric slider values must share the multiplier column");
-  assert.equal(source.includes(".settings-group output{display:grid"), false,
-    "timeout columns must not change the layout of unrelated setting values");
-  assert.ok(source.includes("grid-template-columns:48px 68px"));
-  assert.ok(source.includes(".timeout-seconds{color:#91a0b3}"));
-  assert.ok(source.includes("seconds: `(${copy.seconds(seconds)})`"));
+  assert.equal(source.includes('class: "timeout-multiplier"'), false);
+  assert.equal(source.includes('class: "timeout-seconds"'), false);
+  assert.ok(source.includes('`${seconds} s`'));
   assert.ok(source.includes("chrome.storage.local.set({ [enabledKey]: enabled })"));
   assert.ok(source.includes("savePlaylistPreviewRetentionCapacity(chrome.storage.local"));
   assert.ok(source.includes("savePlaylistStageRetryLimit(chrome.storage.local"));
@@ -66,6 +63,18 @@ test("Playmium controls use persistent inputs and show multiplier plus actual ti
   assert.equal(source.includes("sessionStorage"), false);
   assert.equal(controls.includes("playlist-edge-gap"), false);
   assert.equal(controls.includes("Edge gap"), false);
+});
+
+test("native startup timeout does not control Playmium-added player startup", async () => {
+  const eventsSource = await readFile("src/preview-playback-experiment-events.ts", "utf8");
+  const adapterSource = await readFile("src/preview-playback-adapter.experiment.ts", "utf8");
+  const playbackSource = await readFile("src/preview-playback.experiment.ts", "utf8");
+  assert.equal(eventsSource.includes("timeoutMs: number"), false);
+  assert.equal(adapterSource.includes("r.timeoutMs"), false);
+  assert.equal(source.includes("timeoutMs: Math.min(15000, Math.max(2000, previewStartupTimeoutSeconds * 1000))"), false);
+  assert.ok(playbackSource.includes("const newPlayerStartupSafetyTimeoutMs = 5000"));
+  assert.ok(playbackSource.includes("newPlayerStartupSafetyTimeoutMs)"));
+  assert.equal(playbackSource.includes("request.timeoutMs"), false);
 });
 
 test("Playmium settings stay inside narrow out-of-player panels", () => {
@@ -118,21 +127,29 @@ test("reference control panel keeps equal tab dimensions and contained text-trig
   assert.ok(source.includes('id: "advanced-settings", role: "dialog"'));
   assert.ok(source.includes("setAdvancedSettingsOpen(false, true)"));
   assert.ok(source.includes("#advanced-settings .settings-group>.row>label{display:grid"));
-  assert.ok(source.includes("@container(min-width:1160px){#advanced-settings{right:468px}}"));
-  assert.ok(source.includes("width:min(680px,calc(100% - 24px))"));
+  assert.ok(source.includes("@container(min-width:1040px){#advanced-settings{right:468px}}"));
+  assert.ok(source.includes("width:min(560px,calc(100% - 24px))"));
   assert.ok(source.includes("#advanced-settings>.settings-group-first{border-top:0"));
+  assert.ok(source.includes('id: "youtube-native-previews-heading"'));
+  assert.ok(source.includes('id: "playmium-added-previews-heading"'));
+  assert.equal(source.includes('id: "preview-search-heading"'), false);
+  assert.ok(source.indexOf('id: "youtube-native-previews-heading"') < source.indexOf('id: "playmium-added-previews-heading"'));
   assert.ok(source.includes('settingsHelp("advanced-settings-help"'));
   assert.equal(source.includes('settingsHelp("preview-search-help"'), false);
   assert.ok(source.includes('id: "settings-tooltip", role: "tooltip", hidden: ""'));
   assert.ok(source.includes(".settings-text-help:hover,.settings-text-help:focus-visible,.settings-text-help[aria-expanded=true]"));
-  assert.ok(source.includes('#settings-tooltip[data-lines="2"]{width:300px;white-space:pre-line}'));
+  assert.ok(source.includes('#settings-tooltip[data-lines="2"]{width:300px;white-space:normal}'));
+  assert.equal(source.includes('tooltipText.replace(/([.!?。！？])'), false);
   assert.ok(source.includes('"data-tooltip-lines": "2"'));
   assert.ok(source.includes('"Applies this limit to each step below."'));
   assert.equal(source.includes("restoreAllDefaultsTitle"), false);
   assert.equal(source.includes('id: "restore-defaults", type: "button", class: "settings-text-help"'), false);
   assert.equal(source.includes("videoIdSearchButton.title = copy.urlSearchHelp"), false);
   assert.equal(source.includes("urlSearchButton.title = copy.urlSearchHelp"), false);
-  assert.ok(source.includes("#advanced-settings{z-index:7;right:12px;width:min(680px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}"));
+  assert.ok(source.includes("#advanced-settings{z-index:7;right:12px;width:min(560px,calc(100% - 24px));max-width:none;min-width:0;padding:0 18px 16px;overflow-x:hidden}"));
+  assert.ok(source.includes("#advanced-settings .search-mode-card{display:grid"));
+  assert.ok(source.includes(".search-mode-card{background:transparent;border:0;border-radius:0}"));
+  assert.ok(source.includes(".search-mode-buttons button,.settings-choice button{min-width:0;min-height:28px"));
   assert.ok(source.includes("#advanced-settings-close{display:grid;place-items:center;width:34px;height:34px;padding:0;background:transparent;border:0"));
   assert.ok(source.includes("#controls{width:440px;height:326px}"));
   assert.ok(source.includes("#controls:has(#playmium-panel:not([hidden]) #troubleshooting[open]){height:auto;min-height:326px}"));

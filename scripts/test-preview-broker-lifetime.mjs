@@ -223,14 +223,14 @@ test("final ready timeout stops physical work without replacing the resident ifr
   const observed = f.prime("abcdefghijk", "exhausted-ready").catch(error => error);
   const identity = f.initial();
   f.message({ ...identity, kind: "online" });
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 3; attempt++) {
     f.message({ ...identity, kind: "ready" });
     const deadline = [...f.timers.values()].find(timer => timer.delay === 1500);
     assert.ok(deadline);
     deadline.callback();
   }
   assert.match((await observed).message, /timed out/);
-  assert.equal(f.commands.filter(command => command.kind === "rewake").length, 3);
+  assert.equal(f.commands.filter(command => command.kind === "rewake").length, 2);
   assert.deepEqual(f.commands.at(-1), { ...identity, kind: "cancel" }, "terminal rejection must retire the frame job that top no longer owns");
   assert.equal(f.frames.length, 1);
   assert.equal(f.frames[0].isConnected, true);

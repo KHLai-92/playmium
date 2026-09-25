@@ -9,11 +9,16 @@ import {
   maximumPlaylistBrokerTimeoutMultiplier,
   minimumPlaylistBrokerTimeoutMultiplier,
   nextPlaylistAutoplayVideoId,
+  normalizePlaylistBrokerTimeoutSettings,
   normalizePlaylistBrokerTimeoutMultiplier,
+  normalizePlaylistBrokerTimeoutSeconds,
   normalizePlaylistStageRetryLimit,
   playlistBrokerStageTimeoutMs,
   playlistBrokerTimeoutBaselinesMs,
-  playlistBrokerTimeoutMultiplierStep,
+  playlistBrokerTimeoutMultiplierForSeconds,
+  playlistBrokerTimeoutSeconds,
+  playlistBrokerTimeoutSecondsRanges,
+  playlistBrokerTimeoutSecondsStep,
   playlistDrawerRightInset,
   playlistGeometry,
   savePlaylistBrokerTimeoutMultipliers,
@@ -37,23 +42,39 @@ test("playlist retry limit is bounded and persists across reloads", async () => 
     async set(next) { Object.assign(values, next); },
   };
   const key = "skipAds.inlinePreviewPrototype.playlistStageRetryLimit";
-  assert.equal(defaultPlaylistStageRetryLimit, 3);
+  assert.equal(defaultPlaylistStageRetryLimit, 2);
   assert.equal(await loadPlaylistStageRetryLimit(storage, key), defaultPlaylistStageRetryLimit);
   assert.equal(normalizePlaylistStageRetryLimit(-1), 0);
   assert.equal(normalizePlaylistStageRetryLimit("2"), 2);
-  assert.equal(normalizePlaylistStageRetryLimit(99), 3);
+  assert.equal(normalizePlaylistStageRetryLimit(99), 2);
   await savePlaylistStageRetryLimit(storage, key, 2);
   assert.equal(await loadPlaylistStageRetryLimit(storage, key), 2);
 });
 
-test("broker timeout multipliers cover shorter and longer three-stage windows and persist", async () => {
+test("broker timeouts use compact stage-specific seconds ranges while preserving stored multipliers", async () => {
   assert.deepEqual(playlistBrokerTimeoutBaselinesMs, { starting: 5_000, ready: 1_500, request: 4_000 });
+  assert.deepEqual(playlistBrokerTimeoutSecondsRanges, {
+    starting: { min: 3, max: 8 },
+    ready: { min: .8, max: 2.5 },
+    request: { min: 2, max: 6 },
+  });
+  assert.equal(playlistBrokerTimeoutSecondsStep, .1);
   assert.equal(minimumPlaylistBrokerTimeoutMultiplier, .5);
   assert.equal(maximumPlaylistBrokerTimeoutMultiplier, 3);
-  assert.equal(playlistBrokerTimeoutMultiplierStep, .25);
   assert.equal(normalizePlaylistBrokerTimeoutMultiplier(.1), .5);
-  assert.equal(normalizePlaylistBrokerTimeoutMultiplier(.63), .75);
+  assert.equal(normalizePlaylistBrokerTimeoutMultiplier(.63), .63);
   assert.equal(normalizePlaylistBrokerTimeoutMultiplier(9), 3);
+  assert.equal(normalizePlaylistBrokerTimeoutSeconds("starting", .1), 3);
+  assert.equal(normalizePlaylistBrokerTimeoutSeconds("starting", 9), 8);
+  assert.equal(normalizePlaylistBrokerTimeoutSeconds("ready", .63), .8);
+  assert.equal(normalizePlaylistBrokerTimeoutSeconds("request", 4.06), 4.1);
+  assert.equal(playlistBrokerTimeoutMultiplierForSeconds("ready", 2.5), 1.6667);
+  assert.equal(playlistBrokerTimeoutSeconds("request", { starting: 1, ready: 1, request: 1.25 }), 5);
+  assert.deepEqual(normalizePlaylistBrokerTimeoutSettings({ starting: 3, ready: 3, request: 3 }), {
+    starting: 1.6,
+    ready: 1.6667,
+    request: 1.5,
+  });
 
   const shortest = { starting: .5, ready: .5, request: .5 };
   assert.deepEqual({
@@ -61,11 +82,12 @@ test("broker timeout multipliers cover shorter and longer three-stage windows an
     ready: playlistBrokerStageTimeoutMs("ready", shortest),
     request: playlistBrokerStageTimeoutMs("request", shortest),
   }, { starting: 2_500, ready: 750, request: 2_000 });
+  const longestSettings = normalizePlaylistBrokerTimeoutSettings({ starting: 3, ready: 3, request: 3 });
   assert.deepEqual({
-    starting: playlistBrokerStageTimeoutMs("starting", { starting: 3, ready: 3, request: 3 }),
-    ready: playlistBrokerStageTimeoutMs("ready", { starting: 3, ready: 3, request: 3 }),
-    request: playlistBrokerStageTimeoutMs("request", { starting: 3, ready: 3, request: 3 }),
-  }, { starting: 15_000, ready: 4_500, request: 12_000 });
+    starting: playlistBrokerStageTimeoutMs("starting", longestSettings),
+    ready: playlistBrokerStageTimeoutMs("ready", longestSettings),
+    request: playlistBrokerStageTimeoutMs("request", longestSettings),
+  }, { starting: 8_000, ready: 2_500, request: 6_000 });
 
   const values = {};
   const storage = {
