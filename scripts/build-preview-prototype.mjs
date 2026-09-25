@@ -1,4 +1,4 @@
-// Standalone throwaway extension; never included in the release build.
+// Build the standalone unpacked extension and validate its generated manifest.
 import { build } from "esbuild";
 import { mkdir, writeFile, cp, rm, readFile } from "node:fs/promises";
 import path from "node:path";

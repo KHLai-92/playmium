@@ -2,7 +2,7 @@
 
 Playmium is a browser extension for rich inline YouTube previews.
 
-Native YouTube previews keep their native behavior, while playlist items and supported non-native thumbnails can use Playmium's inline preview player.
+Native YouTube previews keep their native behavior. When YouTube does not provide one, Playmium can add its own inline preview player.
 
 ## Features
 
@@ -65,7 +65,7 @@ To load it manually:
 
 ## Debug logging
 
-Open **Control panel → Playmium → Troubleshooting** and enable **Save troubleshooting log**.
+Open **Control panel → Playmium → Troubleshooting** and enable **Auto-save diagnostic logs**.
 
 Logging is disabled by default. Diagnostic logs are stored locally by the extension and are not committed to Git.
 

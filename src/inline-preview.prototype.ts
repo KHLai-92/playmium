@@ -1,10 +1,7 @@
 /**
- * THROWAWAY feasibility experiment, not a release feature.
- * Question: can original playlist selections and expanded non-native thumbnails
- * share one complete preview interface that reuses an open extension player or
- * creates one, without tuning stable search/scheduling rules?
- * Real YouTube acceptance is required; the separate TUI only drives fake I/O.
- * Selectors verified on live desktop YouTube on 2026-09-11.
+ * Playmium's inline preview interface for YouTube native previews and
+ * Playmium-added previews. Selectors verified on live desktop YouTube on
+ * 2026-09-11.
  */
 import { qualityLabels, type QualityState } from "./preview-quality";
 import { type CaptionState } from "./preview-captions";
@@ -243,7 +240,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const playlistShadow = playlistChrome.attachShadow({ mode: "open" });
   const panelStyle = document.createElement("style");
   panelStyle.textContent = `
-    :host{color-scheme:dark} *{box-sizing:border-box}
+    :host{color-scheme:dark;outline:none} *{box-sizing:border-box}
     section{width:420px;max-width:calc(100vw - 32px);font:13px/1.4 system-ui;color:#eee;background:#171a20;border:1px solid #64748b;border-radius:12px;padding:14px;box-shadow:0 8px 30px #0008}
     header{display:flex;justify-content:space-between;align-items:center;gap:12px} strong{font-size:14px} p{margin:8px 0}
     button,select,input{font:inherit} button,select{color:#fff;background:#303844;border:1px solid #697586;border-radius:6px;padding:6px 9px;cursor:pointer}
@@ -344,13 +341,13 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   playlistButton.setAttribute("aria-controls", "skip-ads-preview-playlist-drawer");
   const playlistAutoplayButton = node("button", {
     id: "playlist-autoplay", type: "button", class: "playlist-autoplay-toggle",
-    "aria-label": "Autoplay next playlist video: Off"
+    "aria-label": `Autoplay next playlist video: ${defaultPlaylistAutoplayEnabled ? "On" : "Off"}`
   },
     node("span", { class: "playlist-autoplay-label" }, "Autoplay next"),
     node("span", { class: "playlist-autoplay-switch", "aria-hidden": "true" },
       node("span", { class: "playlist-autoplay-knob" })));
   playlistAutoplayButton.hidden = true;
-  playlistAutoplayButton.setAttribute("aria-pressed", "false");
+  playlistAutoplayButton.setAttribute("aria-pressed", String(defaultPlaylistAutoplayEnabled));
   const speakerIcon = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   speakerIcon.setAttribute("viewBox", "0 0 24 24");
   speakerIcon.setAttribute("aria-hidden", "true");
@@ -368,7 +365,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     ...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(rate => node("option",
       rate === 1 ? { value: String(rate), selected: "" } : { value: String(rate) }, `${rate}×`)));
   const playlistRetentionInput = node("select", { id: "playlist-retention-capacity", "aria-label": "Previews kept ready",
-    "aria-valuetext": `${playlistPreviewRetentionCapacity} saved preview` },
+    "aria-valuetext": `${playlistPreviewRetentionCapacity} ${playlistPreviewRetentionCapacity === 1 ? "preview" : "previews"} kept ready` },
     ...[1, 2, 3].map(capacity => node("option", capacity === playlistPreviewRetentionCapacity
       ? { value: String(capacity), selected: "" } : { value: String(capacity) }, String(capacity))));
   const previewStartupTimeoutInput = node("input", { id: "preview-startup-timeout", type: "range", min: "2", max: "5", step: "0.1",
@@ -443,7 +440,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
         node("div", { class: "settings-group" },
           node("h3", { id: "playmium-added-previews-heading" }, "Playmium-added previews"),
           node("div", { class: "preview-mode-card search-mode-card" },
-            node("strong", { id: "url-search-label", class: "settings-text-help", tabindex: "0", "data-tooltip-lines": "2",
+            node("strong", { id: "url-search-label", class: "settings-text-help", tabindex: "0",
               "aria-description": "Chooses how Playmium finds videos for added previews. Full video URL is recommended.",
               "data-tooltip": "Chooses how Playmium finds videos for added previews. Full video URL is recommended." }, "Search method"), searchModeButtons),
           row(node("label", {}, node("span", { class: "setting-label", id: "playlist-retention-label" }, "Previews kept ready"), playlistRetentionInput)),
@@ -533,8 +530,7 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     .settings-help:hover,.settings-help:focus-visible,.settings-help[aria-expanded=true]{border-color:#75d9ff;color:#dff4ff;outline:0;box-shadow:0 0 0 2px #63d5ff2b}
     .settings-text-help{width:max-content;max-width:100%;border-radius:4px;cursor:help;text-decoration:underline dotted transparent;text-underline-offset:4px;transition:color .12s,text-decoration-color .12s,background .12s}
     .settings-text-help:hover,.settings-text-help:focus-visible,.settings-text-help[aria-expanded=true]{color:#eafffb;text-decoration-color:#65d7c8;outline:0;background:#5eead40b}
-    #settings-tooltip{position:absolute;z-index:20;width:230px;max-width:calc(100% - 32px);padding:10px 12px;border:1px solid #52677b;border-radius:9px;background:#222c38;color:#eef4fa;box-shadow:0 14px 36px #000b;font:400 12px/1.42 system-ui;white-space:normal;pointer-events:none}
-    #settings-tooltip[data-lines="2"]{width:300px;white-space:normal}
+    #settings-tooltip{position:absolute;z-index:20;width:200px;max-width:calc(100% - 32px);padding:9px 11px;border:1px solid #52677b;border-radius:9px;background:#222c38;color:#eef4fa;box-shadow:0 14px 36px #000b;font:400 12px/1.42 system-ui;white-space:normal;overflow-wrap:break-word;pointer-events:none}
     #settings-tooltip::before{content:"";position:absolute;width:9px;height:9px;transform:rotate(45deg);background:#222c38}
     #settings-tooltip[data-side=right]::before{left:-5px;top:var(--arrow-top,18px);border-left:1px solid #52677b;border-bottom:1px solid #52677b}
     #settings-tooltip[data-side=left]::before{right:-5px;top:var(--arrow-top,18px);border-right:1px solid #52677b;border-top:1px solid #52677b}
@@ -742,6 +738,28 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
   const infoViewer = createInfoViewer(shadow, () => session, seekTo, pageBridge, previewUiCopy(defaultPreviewUiLanguage));
   const selectControls = createSelectControls(shadow, panel);
   let activeSettingsTooltipTarget: HTMLElement | null = null;
+  const settingsTooltipWidths: Readonly<Record<PreviewUiLanguage, Readonly<Record<string, number>>>> = {
+    en: {
+      "advanced-settings-help": 168,
+      "url-search-label": 300,
+      "preview-startup-attempts-label": 220,
+      "preview-startup-timeout-label": 146,
+      "playlist-retries-label": 136,
+      "playlist-starting-timeout-label": 170,
+      "playlist-ready-timeout-label": 130,
+      "playlist-request-timeout-label": 138,
+    },
+    "zh-TW": {
+      "advanced-settings-help": 146,
+      "url-search-label": 200,
+      "preview-startup-attempts-label": 133,
+      "preview-startup-timeout-label": 160,
+      "playlist-retries-label": 110,
+      "playlist-starting-timeout-label": 130,
+      "playlist-ready-timeout-label": 142,
+      "playlist-request-timeout-label": 150,
+    },
+  };
 
   function hideSettingsTooltip() {
     settingsTooltip.hidden = true;
@@ -757,9 +775,8 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     }
     activeSettingsTooltipTarget = target;
     target.setAttribute("aria-expanded", "true");
-    const twoLines = target.dataset.tooltipLines === "2";
-    settingsTooltip.dataset.lines = twoLines ? "2" : "";
     settingsTooltip.textContent = tooltipText;
+    settingsTooltip.style.width = `${settingsTooltipWidths[uiLanguage][target.id] ?? 200}px`;
     settingsTooltip.hidden = false;
     settingsTooltip.style.left = "0px";
     settingsTooltip.style.top = "0px";
@@ -812,7 +829,6 @@ import { createPreviewSearchPreference, defaultPreviewUrlSearchEnabled, previewS
     element("playlist-starting-timeout-label"),
     element("playlist-ready-timeout-label"),
     element("playlist-request-timeout-label"),
-    restoreDefaultsButton,
   ];
   for (const target of advancedSettingsTooltipTargets) {
     target.setAttribute("aria-expanded", "false");

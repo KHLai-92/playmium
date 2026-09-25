@@ -345,7 +345,7 @@ const traditionalChinese: PreviewUiCopy = {
   youtubeNativePreviews: "YouTube 原生預覽",
   playmiumAddedPreviews: "Playmium 延伸預覽",
   urlSearchMethod: "搜尋方式",
-  urlSearchHelp: "選擇 Playmium 尋找補充預覽影片的方式。建議使用完整影片網址。",
+  urlSearchHelp: "選擇 Playmium 尋找預覽影片的方式。建議使用完整影片網址。",
   urlSearchVideoId: "影片 ID",
   urlSearchFullUrl: "影片網址",
   settingsSaveFailed: "變更已套用於此頁面，但無法儲存，請再試一次。",

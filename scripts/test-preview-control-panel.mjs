@@ -34,7 +34,7 @@ test("extension action opens Playmium while the in-player gear opens YouTube", (
 });
 
 test("Playmium controls use persistent compact choices and direct timeout seconds", () => {
-  assert.ok(controls.includes("Autoplay next playlist video: Off"));
+  assert.ok(controls.includes("Autoplay next playlist video"));
   assert.ok(controls.includes("Max attempts/step"));
   assert.ok(source.includes('node("select", { id: "playlist-retention-capacity"'));
   assert.equal(source.includes('id: "playlist-retention-capacity", type: "range"'), false);
@@ -140,9 +140,15 @@ test("reference control panel keeps equal tab dimensions and contained text-trig
   assert.equal(source.includes('settingsHelp("preview-search-help"'), false);
   assert.ok(source.includes('id: "settings-tooltip", role: "tooltip", hidden: ""'));
   assert.ok(source.includes(".settings-text-help:hover,.settings-text-help:focus-visible,.settings-text-help[aria-expanded=true]"));
-  assert.ok(source.includes('#settings-tooltip[data-lines="2"]{width:300px;white-space:normal}'));
+  assert.ok(source.includes("#settings-tooltip{position:absolute;z-index:20;width:200px;max-width:calc(100% - 32px)"));
+  assert.ok(source.includes("const settingsTooltipWidths:"));
+  for (const width of [168, 300, 220, 146, 136, 170, 130, 138, 160, 200, 133, 110, 142, 150]) {
+    assert.ok(source.includes(`: ${width},`), `manual tooltip width ${width}px should be present`);
+  }
+  assert.ok(source.includes("settingsTooltipWidths[uiLanguage][target.id]"));
+  assert.ok(source.includes(":host{color-scheme:dark;outline:none}"));
   assert.equal(source.includes('tooltipText.replace(/([.!?。！？])'), false);
-  assert.ok(source.includes('"data-tooltip-lines": "2"'));
+  assert.equal(source.includes('"data-tooltip-lines": "2"'), false);
   assert.ok(source.includes('"Applies this limit to each step below."'));
   assert.equal(source.includes("restoreAllDefaultsTitle"), false);
   assert.equal(source.includes('id: "restore-defaults", type: "button", class: "settings-text-help"'), false);

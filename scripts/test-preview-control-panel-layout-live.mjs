@@ -32,6 +32,10 @@ try {
   assert.ok(Math.abs(outOfPlayerControlsBox.width - 440) <= 1 && Math.abs(outOfPlayerControlsBox.height - 326) <= 1,
     `out-of-player controls should use the in-player 440 by 326 size, got ${outOfPlayerControlsBox.width} by ${outOfPlayerControlsBox.height}`);
   await page.keyboard.press("Alt+P");
+  assert.equal(await host.evaluate(element => element.matches(":focus")), true,
+    "closing standalone controls should move focus out of the hidden panel content");
+  assert.equal(await host.evaluate(element => getComputedStyle(element).outlineStyle), "none",
+  "the non-interactive focused host must not draw a page-sized outline");
   await host.evaluate(element => {
     element.style.cssText = [
       "position:fixed!important",
@@ -157,8 +161,6 @@ try {
   const searchTooltip = page.locator("#settings-tooltip");
   const searchTooltipBox = await searchTooltip.boundingBox();
   assert.ok(searchTooltipBox, "Search method tooltip must be visible");
-  assert.equal(await searchTooltip.getAttribute("data-lines"), "2",
-    "Search method tooltip should use its two-line treatment");
   assert.equal((await searchTooltip.textContent())?.includes("\n"), false,
     "Search method tooltip should wrap naturally without a forced sentence break");
   assert.equal(await searchTooltip.evaluate(element => {
@@ -172,6 +174,57 @@ try {
     searchTooltipBox.x + searchTooltipBox.width <= advancedBox.x + advancedBox.width &&
     searchTooltipBox.y + searchTooltipBox.height <= advancedBox.y + advancedBox.height,
   "Search method tooltip must remain inside Advanced settings");
+  const englishTooltipLayout = {
+    "advanced-settings-help": { width: 168, lines: 2 },
+    "url-search-label": { width: 300, lines: 2 },
+    "preview-startup-attempts-label": { width: 220, lines: 2 },
+    "preview-startup-timeout-label": { width: 146, lines: 2 },
+    "playlist-retries-label": { width: 136, lines: 2 },
+    "playlist-starting-timeout-label": { width: 170, lines: 1 },
+    "playlist-ready-timeout-label": { width: 130, lines: 2 },
+    "playlist-request-timeout-label": { width: 138, lines: 2 },
+  };
+  const tooltipWhitespaceFailures = [];
+  const tooltipTargetIds = Object.keys(englishTooltipLayout);
+  for (const [targetId, expected] of Object.entries(englishTooltipLayout)) {
+    await page.locator(`#${targetId}`).hover();
+    const tooltipBox = await searchTooltip.boundingBox();
+    const textMetrics = await searchTooltip.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const lines = [...range.getClientRects()];
+      return { count: lines.length, widest: Math.max(...lines.map(line => line.width)) };
+    });
+    assert.ok(tooltipBox, `${targetId} tooltip must be measurable`);
+    assert.ok(Math.abs(tooltipBox.width - expected.width) <= 1,
+      `${targetId} tooltip should use its manually selected English width`);
+    assert.equal(textMetrics.count, expected.lines,
+      `${targetId} tooltip should use its reviewed English line count`);
+    if (expected.width - 24 - textMetrics.widest > 20) {
+      tooltipWhitespaceFailures.push(`${targetId} English: ${JSON.stringify(textMetrics)}`);
+    }
+    assert.ok(tooltipBox.x >= advancedBox.x && tooltipBox.y >= advancedBox.y &&
+      tooltipBox.x + tooltipBox.width <= advancedBox.x + advancedBox.width &&
+      tooltipBox.y + tooltipBox.height <= advancedBox.y + advancedBox.height,
+    `${targetId} tooltip must remain inside Advanced settings`);
+  }
+  assert.deepEqual(await searchTooltip.evaluate(element => {
+    const textNode = element.firstChild;
+    if (!(textNode instanceof Text)) return [];
+    const lines = [];
+    let previousTop;
+    for (let index = 0; index < textNode.length; index++) {
+      const range = document.createRange();
+      range.setStart(textNode, index);
+      range.setEnd(textNode, index + 1);
+      const top = Math.round(range.getBoundingClientRect().top);
+      if (top !== previousTop) lines.push("");
+      lines[lines.length - 1] += textNode.data[index];
+      previousTop = top;
+    }
+    return lines.map(line => line.trim());
+  }), ["Waits for YouTube’s", "response."],
+  "Response timeout tooltip should break at the sentence's natural phrase boundary");
   await page.locator("#playlist-starting-timeout-label").hover();
   assert.equal(await searchTooltip.textContent(), "Finds the matching video.");
   const failures = [];
@@ -230,6 +283,42 @@ try {
   assert.equal(await page.locator("#playlist-retries-label").textContent(), "每階段嘗試上限");
   assert.ok(await page.locator("#advanced-settings").evaluate(element => element.scrollWidth - element.clientWidth) <= 1,
     "Traditional Chinese advanced-settings copy should not overflow horizontally");
+  const zhAdvancedBox = await advancedSettings.boundingBox();
+  assert.ok(zhAdvancedBox, "Traditional Chinese advanced settings must be measurable");
+  const traditionalChineseTooltipLayout = {
+    "advanced-settings-help": { width: 146, lines: 2 },
+    "url-search-label": { width: 200, lines: 2 },
+    "preview-startup-attempts-label": { width: 133, lines: 2 },
+    "preview-startup-timeout-label": { width: 160, lines: 1 },
+    "playlist-retries-label": { width: 110, lines: 2 },
+    "playlist-starting-timeout-label": { width: 130, lines: 1 },
+    "playlist-ready-timeout-label": { width: 142, lines: 1 },
+    "playlist-request-timeout-label": { width: 150, lines: 1 },
+  };
+  for (const [targetId, expected] of Object.entries(traditionalChineseTooltipLayout)) {
+    await page.locator(`#${targetId}`).hover();
+    const tooltipBox = await searchTooltip.boundingBox();
+    const textMetrics = await searchTooltip.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const lines = [...range.getClientRects()];
+      return { count: lines.length, widest: Math.max(...lines.map(line => line.width)) };
+    });
+    assert.ok(tooltipBox, `${targetId} Traditional Chinese tooltip must be measurable`);
+    assert.ok(Math.abs(tooltipBox.width - expected.width) <= 1,
+      `${targetId} tooltip should use its manually selected Traditional Chinese width`);
+    assert.equal(textMetrics.count, expected.lines,
+      `${targetId} tooltip should use its reviewed Traditional Chinese line count`);
+    if (expected.width - 24 - textMetrics.widest > 20) {
+      tooltipWhitespaceFailures.push(`${targetId} Traditional Chinese: ${JSON.stringify(textMetrics)}`);
+    }
+    assert.ok(tooltipBox.x >= zhAdvancedBox.x && tooltipBox.y >= zhAdvancedBox.y &&
+      tooltipBox.x + tooltipBox.width <= zhAdvancedBox.x + zhAdvancedBox.width &&
+      tooltipBox.y + tooltipBox.height <= zhAdvancedBox.y + zhAdvancedBox.height,
+    `${targetId} Traditional Chinese tooltip must remain inside Advanced settings`);
+  }
+  assert.deepEqual(tooltipWhitespaceFailures, [],
+    "manually sized English and Traditional Chinese tooltips should not leave excessive horizontal space");
   await page.locator("#advanced-settings-close").click();
   await page.locator("#youtube-tab").click();
   assert.equal(await page.locator("#subtitles-label").textContent(), "字幕");

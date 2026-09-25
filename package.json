@@ -1,8 +1,8 @@
 {
   "name": "playmium",
-  "version": "1.0.0",
+  "version": "2.0.0",
   "private": true,
-  "author": "Peter & Codex <joint@local>",
+  "author": "KHLai-92 <294032626+KHLai-92@users.noreply.github.com>",
   "type": "module",
   "scripts": {
     "build": "node scripts/build-preview-prototype.mjs",

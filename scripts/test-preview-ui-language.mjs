@@ -52,7 +52,7 @@ test("control panel copy is precise and fully localized", () => {
   assert.equal(chinese.youtubeNativePreviews, "YouTube 原生預覽");
   assert.equal(chinese.playmiumAddedPreviews, "Playmium 延伸預覽");
   assert.equal(chinese.urlSearchMethod, "搜尋方式");
-  assert.equal(chinese.urlSearchHelp, "選擇 Playmium 尋找補充預覽影片的方式。建議使用完整影片網址。");
+  assert.equal(chinese.urlSearchHelp, "選擇 Playmium 尋找預覽影片的方式。建議使用完整影片網址。");
   assert.equal(chinese.urlSearchFullUrl, "影片網址");
   assert.equal(chinese.previewStartupAttemptsHelp, "Playmium 最多會嘗試啟動預覽幾次。");
   assert.equal(chinese.previewStartupTimeout, "單次嘗試逾時");

@@ -108,7 +108,7 @@ test("playlist autoplay preference persists and advances without wrapping", asyn
     async set(next) { Object.assign(values, next); },
   };
   const key = "skipAds.inlinePreviewPrototype.playlistAutoplay";
-  assert.equal(await loadPlaylistAutoplayPreference(storage, key), false);
+  assert.equal(await loadPlaylistAutoplayPreference(storage, key), true);
   await savePlaylistAutoplayPreference(storage, key, true);
   assert.equal(await loadPlaylistAutoplayPreference(storage, key), true);
 
