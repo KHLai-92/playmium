@@ -78,6 +78,8 @@ test("native startup timeout does not control Playmium-added player startup", as
 });
 
 test("Playmium settings stay inside narrow out-of-player panels", () => {
+  assert.ok(source.includes('width:464px;height:calc(100vh - 32px)'));
+  assert.ok(source.includes("@container(max-width:463px)"));
   assert.ok(source.includes("overflow-x:hidden;overflow-y:auto"));
   assert.ok(source.includes("#playmium-panel .settings-group>.row>label"));
   assert.ok(source.includes("grid-template-columns:minmax(0,1fr) 140px"));

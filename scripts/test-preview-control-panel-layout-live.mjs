@@ -26,6 +26,12 @@ try {
   await page.waitForTimeout(500);
 
   const host = page.locator("#skip-ads-preview-prototype");
+  await page.keyboard.press("Alt+P");
+  const outOfPlayerControlsBox = await page.locator("#controls").boundingBox();
+  assert.ok(outOfPlayerControlsBox, "out-of-player controls must be measurable");
+  assert.ok(Math.abs(outOfPlayerControlsBox.width - 440) <= 1 && Math.abs(outOfPlayerControlsBox.height - 326) <= 1,
+    `out-of-player controls should use the in-player 440 by 326 size, got ${outOfPlayerControlsBox.width} by ${outOfPlayerControlsBox.height}`);
+  await page.keyboard.press("Alt+P");
   await host.evaluate(element => {
     element.style.cssText = [
       "position:fixed!important",
@@ -43,6 +49,9 @@ try {
   const retentionBox = await page.locator("#playlist-retention-capacity-trigger").boundingBox();
   const languageBox = await page.locator("#ui-language-trigger").boundingBox();
   assert.ok(playmiumControlsBox && retentionBox && languageBox, "Playmium controls must be measurable");
+  assert.ok(Math.abs(playmiumControlsBox.width - outOfPlayerControlsBox.width) <= 1 &&
+    Math.abs(playmiumControlsBox.height - outOfPlayerControlsBox.height) <= 1,
+  "out-of-player and in-player controls should have identical dimensions");
   assert.equal(await page.locator("#playmium-main > .preview-mode-card[title], #enable[aria-description]").count(), 0,
     "the main preview toggle must not expose a tooltip");
   assert.equal(await page.locator("#playmium-main > .row[title], #playlist-retention-capacity[aria-description], #playlist-retention-capacity-trigger[aria-description]").count(), 0,
