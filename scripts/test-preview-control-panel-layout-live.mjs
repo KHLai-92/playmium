@@ -4,6 +4,31 @@ import os from "node:os";
 import path from "node:path";
 import { chromium } from "playwright";
 
+async function assertTooltipLayout({ page, tooltip, panelBox, layout, language, whitespaceFailures }) {
+  for (const [targetId, expected] of Object.entries(layout)) {
+    await page.locator(`#${targetId}`).hover();
+    const tooltipBox = await tooltip.boundingBox();
+    const textMetrics = await tooltip.evaluate(element => {
+      const range = document.createRange();
+      range.selectNodeContents(element);
+      const lines = [...range.getClientRects()];
+      return { count: lines.length, widest: Math.max(...lines.map(line => line.width)) };
+    });
+    assert.ok(tooltipBox, `${targetId} ${language} tooltip must be measurable`);
+    assert.ok(Math.abs(tooltipBox.width - expected.width) <= 1,
+      `${targetId} tooltip should use its manually selected ${language} width`);
+    assert.equal(textMetrics.count, expected.lines,
+      `${targetId} tooltip should use its reviewed ${language} line count`);
+    if (expected.width - 24 - textMetrics.widest > 20) {
+      whitespaceFailures.push(`${targetId} ${language}: ${JSON.stringify(textMetrics)}`);
+    }
+    assert.ok(tooltipBox.x >= panelBox.x && tooltipBox.y >= panelBox.y &&
+      tooltipBox.x + tooltipBox.width <= panelBox.x + panelBox.width &&
+      tooltipBox.y + tooltipBox.height <= panelBox.y + panelBox.height,
+    `${targetId} ${language} tooltip must remain inside Advanced settings`);
+  }
+}
+
 const extensionPath = path.resolve("dist-playmium");
 const userDataDir = await mkdtemp(path.join(os.tmpdir(), "playmium-layout-"));
 const context = await chromium.launchPersistentContext(userDataDir, {
@@ -185,29 +210,10 @@ try {
     "playlist-request-timeout-label": { width: 138, lines: 2 },
   };
   const tooltipWhitespaceFailures = [];
-  const tooltipTargetIds = Object.keys(englishTooltipLayout);
-  for (const [targetId, expected] of Object.entries(englishTooltipLayout)) {
-    await page.locator(`#${targetId}`).hover();
-    const tooltipBox = await searchTooltip.boundingBox();
-    const textMetrics = await searchTooltip.evaluate(element => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      const lines = [...range.getClientRects()];
-      return { count: lines.length, widest: Math.max(...lines.map(line => line.width)) };
-    });
-    assert.ok(tooltipBox, `${targetId} tooltip must be measurable`);
-    assert.ok(Math.abs(tooltipBox.width - expected.width) <= 1,
-      `${targetId} tooltip should use its manually selected English width`);
-    assert.equal(textMetrics.count, expected.lines,
-      `${targetId} tooltip should use its reviewed English line count`);
-    if (expected.width - 24 - textMetrics.widest > 20) {
-      tooltipWhitespaceFailures.push(`${targetId} English: ${JSON.stringify(textMetrics)}`);
-    }
-    assert.ok(tooltipBox.x >= advancedBox.x && tooltipBox.y >= advancedBox.y &&
-      tooltipBox.x + tooltipBox.width <= advancedBox.x + advancedBox.width &&
-      tooltipBox.y + tooltipBox.height <= advancedBox.y + advancedBox.height,
-    `${targetId} tooltip must remain inside Advanced settings`);
-  }
+  await assertTooltipLayout({
+    page, tooltip: searchTooltip, panelBox: advancedBox, layout: englishTooltipLayout,
+    language: "English", whitespaceFailures: tooltipWhitespaceFailures,
+  });
   assert.deepEqual(await searchTooltip.evaluate(element => {
     const textNode = element.firstChild;
     if (!(textNode instanceof Text)) return [];
@@ -295,28 +301,10 @@ try {
     "playlist-ready-timeout-label": { width: 142, lines: 1 },
     "playlist-request-timeout-label": { width: 150, lines: 1 },
   };
-  for (const [targetId, expected] of Object.entries(traditionalChineseTooltipLayout)) {
-    await page.locator(`#${targetId}`).hover();
-    const tooltipBox = await searchTooltip.boundingBox();
-    const textMetrics = await searchTooltip.evaluate(element => {
-      const range = document.createRange();
-      range.selectNodeContents(element);
-      const lines = [...range.getClientRects()];
-      return { count: lines.length, widest: Math.max(...lines.map(line => line.width)) };
-    });
-    assert.ok(tooltipBox, `${targetId} Traditional Chinese tooltip must be measurable`);
-    assert.ok(Math.abs(tooltipBox.width - expected.width) <= 1,
-      `${targetId} tooltip should use its manually selected Traditional Chinese width`);
-    assert.equal(textMetrics.count, expected.lines,
-      `${targetId} tooltip should use its reviewed Traditional Chinese line count`);
-    if (expected.width - 24 - textMetrics.widest > 20) {
-      tooltipWhitespaceFailures.push(`${targetId} Traditional Chinese: ${JSON.stringify(textMetrics)}`);
-    }
-    assert.ok(tooltipBox.x >= zhAdvancedBox.x && tooltipBox.y >= zhAdvancedBox.y &&
-      tooltipBox.x + tooltipBox.width <= zhAdvancedBox.x + zhAdvancedBox.width &&
-      tooltipBox.y + tooltipBox.height <= zhAdvancedBox.y + zhAdvancedBox.height,
-    `${targetId} Traditional Chinese tooltip must remain inside Advanced settings`);
-  }
+  await assertTooltipLayout({
+    page, tooltip: searchTooltip, panelBox: zhAdvancedBox, layout: traditionalChineseTooltipLayout,
+    language: "Traditional Chinese", whitespaceFailures: tooltipWhitespaceFailures,
+  });
   assert.deepEqual(tooltipWhitespaceFailures, [],
     "manually sized English and Traditional Chinese tooltips should not leave excessive horizontal space");
   await page.locator("#advanced-settings-close").click();

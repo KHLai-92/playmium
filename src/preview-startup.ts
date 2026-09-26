@@ -1,10 +1,12 @@
 export const defaultPreviewStartupTimeoutSeconds = 3;
 export const defaultPreviewStartupAttempts = 3;
+export const previewStartupTimeoutSecondsRange = Object.freeze({ min: 2, max: 5, step: .1 });
 
 export function normalizePreviewStartupTimeoutSeconds(value: unknown): number {
   const parsed = typeof value === "number" ? value : typeof value === "string" && value.trim() ? Number(value) : NaN;
   return Number.isFinite(parsed)
-    ? Math.round(Math.max(2, Math.min(5, parsed)) * 10) / 10
+    ? Math.round(Math.max(previewStartupTimeoutSecondsRange.min,
+      Math.min(previewStartupTimeoutSecondsRange.max, parsed)) * 10) / 10
     : defaultPreviewStartupTimeoutSeconds;
 }
 
