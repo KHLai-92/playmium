@@ -33,7 +33,7 @@ test("1080p wins over higher resolutions; otherwise highest available wins regar
 // browser artifact under test, not a private TypeScript implementation detail.
 const compiled = await readFile("dist-playmium/preview.js", "utf8");
 test("fullscreen removes the floating frame, outline and shadow", () => {
-  const selector = ".${hostClass}:fullscreen{";
+  const selector = "${pinnedPreviewHostSelector}:fullscreen{";
   const at = compiled.indexOf(selector), start = at + selector.length;
   const rule = at < 0 ? "" : compiled.slice(start, compiled.indexOf("}", start));
   assert.match(rule, /border:none!important/);
@@ -42,7 +42,7 @@ test("fullscreen removes the floating frame, outline and shadow", () => {
 });
 
 test("fullscreen removes the focus outline from the full-size controls panel", () => {
-  const selector = ".${hostClass}:fullscreen #playmium-preview{";
+  const selector = "${pinnedPreviewHostSelector}:fullscreen #playmium-preview{";
   const at = compiled.indexOf(selector), start = at + selector.length;
   const rule = at < 0 ? "" : compiled.slice(start, compiled.indexOf("}", start));
   assert.match(rule, /outline:none!important/);

@@ -1,4 +1,4 @@
-import { previewPageSupported } from "./preview-entry";
+import { previewPageSupported, resolvePinnedPreviewHost } from "./preview-entry";
 import { captionRequestEvent, captionResponseEvent, type CaptionState } from "./preview-captions";
 
 // Native APIs verified in YouTube's 8c3fda2d player/captions sources.
@@ -16,8 +16,8 @@ import { captionRequestEvent, captionResponseEvent, type CaptionState } from "./
     if (!previewPageSupported(location.pathname)) return;
     const video = event.target;
     if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains("playmium-preview-video")) return;
-    const host = video.closest(".playmium-preview-pinned");
-    if (!host || !host.matches("ytd-video-preview, #inline-preview-player, #video-preview, [data-skip-preview-owned]")) return;
+    const host = resolvePinnedPreviewHost(video);
+    if (!host) return;
     const detail: unknown = (event as CustomEvent).detail;
     if (typeof detail !== "string" || detail.length > 2048) return;
     let request: { source?: unknown; enabled?: unknown; track?: unknown; translation?: unknown };

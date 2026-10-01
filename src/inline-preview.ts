@@ -35,7 +35,8 @@ import { createPlaylistHoverIntent } from "./preview-playlist-hover";
 import { defaultPreviewUiLanguage, loadPreviewUiLanguage, normalizePreviewUiLanguage, previewUiCopy, savePreviewUiLanguage,
   type PreviewUiLanguage } from "./preview-ui-language";
 
-import { previewPageSupported, previewPlaybackSupport, resolvePreviewHost, resolvePreviewThumbnail, previewThumbnailSelector } from "./preview-entry";
+import { previewPageSupported, previewPlaybackSupport, resolvePreviewHost, resolvePreviewThumbnail, previewThumbnailSelector,
+  previewHostSelector as previewSelector, pinnedPreviewHostSelector as pinnedHostSelector } from "./preview-entry";
 import { sharedPreviewPrepareEvent, sharedPreviewCancelEvent, sharedPreviewStartEvent, sharedPreviewResultEvent,
   type SharedPreviewResult } from "./preview-playback-events";
 import { playlistPreviewWarmPhaseEvent } from "./preview-playlist";
@@ -90,7 +91,6 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
         if (existing) {
           release("Switching preview.", existing.host);
           existing.video.classList.add(videoClass);
-          existing.host.classList.add(hostClass);
           loading = { host: existing.host, floating: existing.floating ?? floatingRect(innerWidth, innerHeight),
             target: intent.target, videoId: intent.videoId, attempt: 1 };
           existing.host.append(panel); document.documentElement.append(backdrop);
@@ -138,10 +138,8 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
     },
   });
   const playmiumVersion = previewDebugLogVersion;
-  const hostClass = "playmium-preview-pinned";
   const ancestorClass = "playmium-preview-ancestor";
   const videoClass = "playmium-preview-video";
-  const previewSelector = "ytd-video-preview, #inline-preview-player, #video-preview, [data-skip-preview-owned]";
   const shortsSelector = "ytd-reel-video-renderer,ytd-reel-item-renderer,ytm-shorts-lockup-view-model,ytm-shorts-lockup-view-model-v2,yt-shorts-lockup-view-model,a[href^='/shorts/'],a[href*='youtube.com/shorts/']";
   type AudioVideo = HTMLVideoElement & {
     webkitAudioDecodedByteCount?: number;
@@ -1524,25 +1522,25 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
   style.textContent = `
     /* YouTube disables pointer events on a finished preview. Keep the pinned
        host interactive so controls do not click through to another thumbnail. */
-    .${hostClass}{pointer-events:auto!important;}
+    ${pinnedHostSelector}{pointer-events:auto!important;}
     #skip-ads-preview-loading-host:not([data-skip-preview-owned-ready]){pointer-events:none!important;}
-    .${hostClass} yt-progress-bar{display:none!important;}
-    .${hostClass} .ytInlinePlayerControlsHost{display:none!important;}
-    .${hostClass} #player-container-wrapper{opacity:1!important;}
-    .${hostClass} .ytp-caption-window-container{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none!important;}
-    .${hostClass} .ytp-caption-window-bottom{bottom:10%!important;}
-    .${hostClass} .caption-window{left:50%!important;right:auto!important;transform:translateX(-50%)!important;max-width:90%!important;height:auto!important;max-height:30%!important;text-align:center!important;}
-    .${hostClass}:not(:fullscreen){box-shadow:0 22px 70px #000b,0 0 0 1px #a1bdd4b3,0 0 0 3px #142233a6!important;cursor:grab!important;}
-    .${hostClass}:active{cursor:grabbing!important;}
-    .${hostClass} .ytp-caption-segment{font-size:clamp(18px,1.7vw,32px)!important;}
-    .${hostClass}.skip-ads-preview-captions-off .ytp-caption-window-container{display:none!important;}
-    .${ancestorClass}{transform:none!important;filter:none!important;perspective:none!important;contain:none!important;overflow:visible!important;clip-path:none!important;isolation:auto!important;z-index:auto!important;}
-    .${hostClass}{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;inset:auto!important;left:var(--skip-preview-left)!important;top:var(--skip-preview-top)!important;width:var(--skip-preview-width)!important;height:var(--skip-preview-height)!important;max-width:none!important;max-height:none!important;transform:none!important;margin:0!important;padding:0!important;z-index:2147483646!important;background:#000!important;overflow:hidden!important;border-radius:14px!important;box-shadow:0 24px 90px #000a,0 0 0 1px #ffffff24!important;}
-    .${hostClass}:fullscreen{inset:0!important;width:100vw!important;height:100vh!important;border:none!important;outline:none!important;border-radius:0!important;box-shadow:none!important}
-    .${hostClass} .${ancestorClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
-    .${hostClass} .${videoClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;transform:none!important;}
-    .${hostClass} #playmium-preview{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;pointer-events:none!important}
-    .${hostClass}:fullscreen #playmium-preview{border:none!important;outline:none!important;box-shadow:none!important}
+    ${pinnedHostSelector} yt-progress-bar{display:none!important;}
+    ${pinnedHostSelector} .ytInlinePlayerControlsHost{display:none!important;}
+    ${pinnedHostSelector} #player-container-wrapper{opacity:1!important;}
+    ${pinnedHostSelector} .ytp-caption-window-container{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;pointer-events:none!important;}
+    ${pinnedHostSelector} .ytp-caption-window-bottom{bottom:10%!important;}
+    ${pinnedHostSelector} .caption-window{left:50%!important;right:auto!important;transform:translateX(-50%)!important;max-width:90%!important;height:auto!important;max-height:30%!important;text-align:center!important;}
+    ${pinnedHostSelector}:not(:fullscreen){box-shadow:0 22px 70px #000b,0 0 0 1px #a1bdd4b3,0 0 0 3px #142233a6!important;cursor:grab!important;}
+    ${pinnedHostSelector}:active{cursor:grabbing!important;}
+    ${pinnedHostSelector} .ytp-caption-segment{font-size:clamp(18px,1.7vw,32px)!important;}
+    ${pinnedHostSelector}.skip-ads-preview-captions-off .ytp-caption-window-container{display:none!important;}
+    .${ancestorClass}{opacity:1!important;transform:none!important;filter:none!important;perspective:none!important;contain:none!important;overflow:visible!important;clip-path:none!important;isolation:auto!important;z-index:auto!important;}
+    ${pinnedHostSelector}{display:block!important;visibility:visible!important;opacity:1!important;position:fixed!important;inset:auto!important;left:var(--skip-preview-left)!important;top:var(--skip-preview-top)!important;width:var(--skip-preview-width)!important;height:var(--skip-preview-height)!important;max-width:none!important;max-height:none!important;transform:none!important;margin:0!important;padding:0!important;z-index:2147483646!important;background:#000!important;overflow:hidden!important;border-radius:14px!important;box-shadow:0 24px 90px #000a,0 0 0 1px #ffffff24!important;}
+    ${pinnedHostSelector}:fullscreen{inset:0!important;width:100vw!important;height:100vh!important;border:none!important;outline:none!important;border-radius:0!important;box-shadow:none!important}
+    ${pinnedHostSelector} .${ancestorClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important}
+    ${pinnedHostSelector} .${videoClass}{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;max-height:none!important;object-fit:contain!important;transform:none!important;}
+    ${pinnedHostSelector} #playmium-preview{position:absolute!important;inset:0!important;width:100%!important;height:100%!important;max-width:none!important;pointer-events:none!important}
+    ${pinnedHostSelector}:fullscreen #playmium-preview{border:none!important;outline:none!important;box-shadow:none!important}
   `;
   const supportedPage = () => previewPageSupported(location.pathname);
   const ranges = (value: TimeRanges) => Array.from({ length: value.length }, (_, i) => [value.start(i), value.end(i)]);
@@ -1866,7 +1864,6 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
     };
     heard = "Not checked";
     activationMessage = "";
-    host.classList.add(hostClass);
     if (playlistContext) host.dataset.skipPreviewPlaylistId = playlistContext.playlistId;
     video.classList.add(videoClass);
     emitPreviewDebugLog("resource.create", { resource: "pinned-preview", key: videoId ?? "unknown" });
@@ -2004,7 +2001,6 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
     old.animation?.cancel();
     for (const [anchor, href] of old.originalWatchHrefs ?? []) if (anchor.isConnected) anchor.href = href;
     if (document.fullscreenElement === old.host) void document.exitFullscreen().catch(() => {});
-    old.host.classList.remove(hostClass);
     if (old.host.dataset) delete old.host.dataset.skipPreviewPlaylistId;
     for (const key of ["left", "top", "width", "height"]) old.host.style.removeProperty(`--skip-preview-${key}`);
     old.host.classList.remove("skip-ads-preview-captions-off");
@@ -3259,7 +3255,7 @@ import { createAdvancedSettings, type AdvancedSettingsAction, type AdvancedSetti
     pendingPin = { videoId, owned, until: owned ? Infinity : now + previewStartupTimeoutSeconds * 1000, notBefore: reusingReleasedPreview ? now + 1000 : now, attempt, playlistContext };
     if (!loading) {
       const host = document.createElement("div");
-      host.id = "skip-ads-preview-loading-host"; host.classList.add(hostClass);
+      host.id = "skip-ads-preview-loading-host";
       loading = { host, floating: floatingRect(innerWidth, innerHeight), target, videoId, attempt, playlistContext };
       document.documentElement.append(backdrop, host); host.append(panel);
       backdrop.hidden = false; backdrop.style.pointerEvents = "none"; positionPlayer();

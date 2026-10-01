@@ -15,7 +15,9 @@ function setup() {
   const player = { parentElement: host, getAvailableQualityLevels: () => ["hd1080", "hd720", "medium", "auto"],
     getPlaybackQuality: () => "medium", setPlaybackQualityRange: (...args) => calls.push(args) };
   const video = Object.assign(new Video(), { currentSrc: "blob:original", isConnected: true,
-    classList: { contains: () => true }, closest: () => host, parentElement: player,
+    classList: { contains: () => true },
+    closest: selector => selector.includes(":has(> #playmium-preview)") ? host : null,
+    parentElement: player,
     currentTime: 87, volume: 0.6, muted: false, playbackRate: 1.5, paused: false });
   const location = { pathname: "/results" };
   const window = {}; window.top = window;

@@ -23,7 +23,9 @@ function scenario({ enabled = true, available = true, toggle = true } = {}) {
     setOption: (module, option, value) => { calls.push([module, option, value]); enabled = Boolean(value.languageCode); if (enabled) selected = value; },
     ...(toggle ? { toggleSubtitles: () => { calls.push('toggle'); enabled = !enabled; } } : {}) };
   const video = Object.assign(new Video(), { currentSrc: 'blob:preview', isConnected: true,
-    classList: { contains: () => true }, closest: () => host, parentElement: player,
+    classList: { contains: () => true },
+    closest: selector => selector.includes(':has(> #playmium-preview)') ? host : null,
+    parentElement: player,
     paused: true, currentTime: 280.34, muted: false, volume: 0.6, playbackRate: 1.5 });
   const window = {}; window.top = window;
   const location = { pathname: '/results' };

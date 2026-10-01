@@ -8,6 +8,7 @@ import { cancelPreviewPreparation, preparePreview, previewVideo, setPreviewReten
 import { loadPlaylistFirstVideoId, loadWatchPage } from "./preview-watch-data.main";
 import { qualityLabels } from "./preview-quality";
 import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-catalog";
+import { resolvePinnedPreviewHost } from "./preview-entry";
 
 (() => {
   if (window !== window.top) return;
@@ -55,7 +56,7 @@ import { createExpiringLru, createPlaylistCatalog } from "./preview-playlist-cat
     troubleObserver.observe(document, { childList: true, subtree: true });
   }
   function context(video: HTMLVideoElement) {
-    const host = video.closest(".playmium-preview-pinned");
+    const host = resolvePinnedPreviewHost(video);
     const href = host?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
     if (!host || !href) return null;
     const url = new URL(href);

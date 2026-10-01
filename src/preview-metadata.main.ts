@@ -1,4 +1,4 @@
-import { previewPageSupported } from "./preview-entry";
+import { previewPageSupported, resolvePinnedPreviewHost } from "./preview-entry";
 import { extractChapters, metadataRequestEvent, metadataResponseEvent, type PreviewMetadata } from './preview-metadata';
 import { loadWatchPage } from './preview-watch-data.main';
 
@@ -8,7 +8,7 @@ import { loadWatchPage } from './preview-watch-data.main';
   document.addEventListener(metadataRequestEvent, event => {
     const video = event.target;
     if (!(video instanceof HTMLVideoElement) || !video.isConnected || !video.classList.contains('playmium-preview-video') || !previewPageSupported(location.pathname)) return;
-    const host = video.closest('.playmium-preview-pinned');
+    const host = resolvePinnedPreviewHost(video);
     const href = host?.querySelector<HTMLAnchorElement>("a[href*='/watch?']")?.href;
     if (!host || !href) return;
     const url = new URL(href);

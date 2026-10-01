@@ -1,4 +1,4 @@
-import { previewPageSupported } from "./preview-entry";
+import { previewPageSupported, resolvePinnedPreviewHost } from "./preview-entry";
 import { qualityLabels, qualityRequestEvent, qualityResponseEvent, type QualityState } from "./preview-quality";
 
 // The controls remain in the isolated world. preview-main.ts composes this
@@ -19,8 +19,8 @@ import { qualityLabels, qualityRequestEvent, qualityResponseEvent, type QualityS
     const video = event.target;
     if (!(video instanceof HTMLVideoElement) || !video.isConnected ||
         !video.classList.contains("playmium-preview-video")) return;
-    const host = video.closest(".playmium-preview-pinned");
-    if (!host || !host.matches("ytd-video-preview, #inline-preview-player, #video-preview, [data-skip-preview-owned]")) return;
+    const host = resolvePinnedPreviewHost(video);
+    if (!host) return;
     const detail: unknown = (event as CustomEvent).detail;
     if (typeof detail !== "string" || detail.length > 2048) return;
     let request: { source?: unknown; quality?: unknown };

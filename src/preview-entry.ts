@@ -5,6 +5,7 @@ export function previewPageSupported(pathname: string) {
 
 export const previewNativeHostSelector = "ytd-video-preview, #inline-preview-player, #video-preview";
 export const previewHostSelector = `${previewNativeHostSelector}, [data-skip-preview-owned]`;
+export const pinnedPreviewHostSelector = `:is(${previewHostSelector}, #skip-ads-preview-loading-host):has(> #playmium-preview)`;
 export const previewThumbnailSelector = "ytd-thumbnail, yt-thumbnail-view-model, ytd-playlist-thumbnail, yt-collection-thumbnail-view-model, ytd-playlist-video-renderer a#thumbnail, ytd-playlist-panel-video-renderer a#thumbnail, ytd-notification-renderer .thumbnail-container";
 export const previewShortsSelector = "ytd-reel-video-renderer,ytd-reel-item-renderer,ytm-shorts-lockup-view-model,ytm-shorts-lockup-view-model-v2,yt-shorts-lockup-view-model,a[href^='/shorts/'],a[href*='youtube.com/shorts/']";
 export const previewCardSelector = "ytd-video-renderer,ytd-radio-renderer,ytd-playlist-renderer,ytd-rich-item-renderer,yt-lockup-view-model,ytd-grid-video-renderer,ytd-compact-video-renderer,ytd-playlist-video-renderer,ytd-playlist-panel-video-renderer,ytd-notification-renderer";
@@ -14,6 +15,12 @@ export const previewCardSelector = "ytd-video-renderer,ytd-radio-renderer,ytd-pl
 export function resolvePreviewHost(target: Element): HTMLElement | null {
   return target.closest<HTMLElement>("[data-skip-preview-owned]") ??
     target.closest<HTMLElement>("ytd-video-preview") ?? target.closest<HTMLElement>(previewNativeHostSelector);
+}
+
+/** A pinned preview is authorized by Playmium's direct control overlay. Unlike
+ * YouTube-owned classes, that structural marker cannot be rewritten by YouTube. */
+export function resolvePinnedPreviewHost(target: Element): HTMLElement | null {
+  return target.closest<HTMLElement>(pinnedPreviewHostSelector);
 }
 
 export type PreviewPlaybackSupport = Readonly<{
