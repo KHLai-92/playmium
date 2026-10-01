@@ -1,10 +1,10 @@
 {
   "schemaVersion": 1,
   "displayName": "Playmium",
-  "extensionVersion": "2.0.0",
+  "extensionVersion": "2.0.2",
   "publisher": "KHLai-92",
   "installFolderName": "Playmium",
-  "archiveUrl": "https://github.com/KHLai-92/playmium/releases/download/v2.0.0/playmium-2.0.0.zip",
-  "sha256": "30b43bfa3aa615e9c240e2990ecad23a5fa635716c8050a8d14380ed2398d9f1",
+  "archiveUrl": "https://github.com/KHLai-92/playmium/releases/download/v2.0.2/playmium-2.0.2.zip",
+  "sha256": "414d5f86cbc11e7a3d465a7f6ef4e6e643210c5558391ad16bd636de28f4c269",
   "extensionRoot": "."
 }
